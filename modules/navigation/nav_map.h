@@ -90,6 +90,9 @@ class NavMap : public NavRid {
 	uint32_t map_update_id = 0;
 
 	// Performance Monitor
+	uint64_t pm_pathfinding_process = 0.0;
+	uint64_t pm_avoidance_process = 0.0;
+	uint64_t pm_synchronization_process = 0.0;
 	int pm_region_count = 0;
 	int pm_agent_count = 0;
 	int pm_link_count = 0;
@@ -98,6 +101,10 @@ class NavMap : public NavRid {
 	int pm_edge_merge_count = 0;
 	int pm_edge_connection_count = 0;
 	int pm_edge_free_count = 0;
+
+private:
+	mutable uint64_t _new_pm_pathfinding_process = 0.0;
+	uint64_t _new_pm_avoidance_process = 0.0;
 
 public:
 	NavMap();
@@ -163,6 +170,9 @@ public:
 	void dispatch_callbacks();
 
 	// Performance Monitor
+	uint64_t get_pm_pathfinding_process() const { return pm_pathfinding_process; }
+	uint64_t get_pm_avoidance_process() const { return pm_avoidance_process; }
+	uint64_t get_pm_synchronization_process() const { return pm_synchronization_process; }
 	int get_pm_region_count() const { return pm_region_count; }
 	int get_pm_agent_count() const { return pm_agent_count; }
 	int get_pm_link_count() const { return pm_link_count; }

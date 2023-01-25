@@ -796,6 +796,9 @@ void GodotNavigationServer::process(real_t p_delta_time) {
 		return;
 	}
 
+	uint64_t _new_pm_pathfinding_process = 0.0;
+	uint64_t _new_pm_avoidance_process = 0.0;
+	uint64_t _new_pm_synchronization_process = 0.0;
 	int _new_pm_region_count = 0;
 	int _new_pm_agent_count = 0;
 	int _new_pm_link_count = 0;
@@ -813,6 +816,9 @@ void GodotNavigationServer::process(real_t p_delta_time) {
 		active_maps[i]->step(p_delta_time);
 		active_maps[i]->dispatch_callbacks();
 
+		_new_pm_pathfinding_process += active_maps[i]->get_pm_pathfinding_process();
+		_new_pm_avoidance_process += active_maps[i]->get_pm_avoidance_process();
+		_new_pm_synchronization_process += active_maps[i]->get_pm_synchronization_process();
 		_new_pm_region_count += active_maps[i]->get_pm_region_count();
 		_new_pm_agent_count += active_maps[i]->get_pm_agent_count();
 		_new_pm_link_count += active_maps[i]->get_pm_link_count();
@@ -829,6 +835,10 @@ void GodotNavigationServer::process(real_t p_delta_time) {
 			active_maps_update_id[i] = new_map_update_id;
 		}
 	}
+
+	_max_pm_pathfinding_process = MAX(_max_pm_pathfinding_process, _new_pm_pathfinding_process);
+	_max_pm_avoidance_process = MAX(_max_pm_avoidance_process, _new_pm_avoidance_process);
+	_max_pm_synchronization_process = MAX(_max_pm_synchronization_process, _new_pm_synchronization_process);
 
 	pm_region_count = _new_pm_region_count;
 	pm_agent_count = _new_pm_agent_count;
@@ -880,38 +890,66 @@ PathQueryResult GodotNavigationServer::_query_path(const PathQueryParameters &p_
 	return r_query_result;
 }
 
-int GodotNavigationServer::get_process_info(ProcessInfo p_info) const {
-	switch (p_info) {
-		case INFO_ACTIVE_MAPS: {
+double GodotNavigationServer::get_server_info_process(ServerProcessInfo p_server_process_info) const {
+	switch (p_server_process_info) {
+		case INFO_PROCESS_PATHFINDING: {
+			return USEC_TO_SEC(pm_pathfinding_process);
+		} break;
+		case INFO_PROCESS_AVOIDANCE: {
+			return USEC_TO_SEC(pm_avoidance_process);
+		} break;
+		case INFO_PROCESS_SYNCHRONIZATION: {
+			return USEC_TO_SEC(pm_synchronization_process);
+		} break;
+	}
+
+	return 0.0;
+}
+
+int GodotNavigationServer::get_server_info_stat(ServerStatInfo p_server_stat_info) const {
+	switch (p_server_stat_info) {
+		case INFO_STAT_ACTIVE_MAPS: {
 			return active_maps.size();
 		} break;
-		case INFO_REGION_COUNT: {
+		case INFO_STAT_REGION_COUNT: {
 			return pm_region_count;
 		} break;
-		case INFO_AGENT_COUNT: {
+		case INFO_STAT_AGENT_COUNT: {
 			return pm_agent_count;
 		} break;
-		case INFO_LINK_COUNT: {
+		case INFO_STAT_LINK_COUNT: {
 			return pm_link_count;
 		} break;
-		case INFO_POLYGON_COUNT: {
+		case INFO_STAT_POLYGON_COUNT: {
 			return pm_polygon_count;
 		} break;
-		case INFO_EDGE_COUNT: {
+		case INFO_STAT_EDGE_COUNT: {
 			return pm_edge_count;
 		} break;
-		case INFO_EDGE_MERGE_COUNT: {
+		case INFO_STAT_EDGE_MERGE_COUNT: {
 			return pm_edge_merge_count;
 		} break;
-		case INFO_EDGE_CONNECTION_COUNT: {
+		case INFO_STAT_EDGE_CONNECTION_COUNT: {
 			return pm_edge_connection_count;
 		} break;
-		case INFO_EDGE_FREE_COUNT: {
+		case INFO_STAT_EDGE_FREE_COUNT: {
 			return pm_edge_free_count;
 		} break;
 	}
 
 	return 0;
+}
+
+void GodotNavigationServer::process_monitor_begin() {
+	_max_pm_pathfinding_process = 0.0;
+	_max_pm_avoidance_process = 0.0;
+	_max_pm_synchronization_process = 0.0;
+}
+
+void GodotNavigationServer::process_monitor_end() {
+	pm_pathfinding_process = _max_pm_pathfinding_process;
+	pm_avoidance_process = _max_pm_avoidance_process;
+	pm_synchronization_process = _max_pm_synchronization_process;
 }
 
 #undef COMMAND_1

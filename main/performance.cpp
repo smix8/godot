@@ -76,6 +76,9 @@ void Performance::_bind_methods() {
 	BIND_ENUM_CONSTANT(PHYSICS_3D_COLLISION_PAIRS);
 	BIND_ENUM_CONSTANT(PHYSICS_3D_ISLAND_COUNT);
 	BIND_ENUM_CONSTANT(AUDIO_OUTPUT_LATENCY);
+	BIND_ENUM_CONSTANT(NAVIGATION_PATHFINDING_PROCESS);
+	BIND_ENUM_CONSTANT(NAVIGATION_AVOIDANCE_PROCESS);
+	BIND_ENUM_CONSTANT(NAVIGATION_SYNCHRONIZATION_PROCESS);
 	BIND_ENUM_CONSTANT(NAVIGATION_ACTIVE_MAPS);
 	BIND_ENUM_CONSTANT(NAVIGATION_REGION_COUNT);
 	BIND_ENUM_CONSTANT(NAVIGATION_AGENT_COUNT);
@@ -124,6 +127,9 @@ String Performance::get_monitor_name(Monitor p_monitor) const {
 		"physics_3d/collision_pairs",
 		"physics_3d/islands",
 		"audio/driver/output_latency",
+		"navigation/pathfinding_process",
+		"navigation/avoidance_process",
+		"navigation/synchronization_process",
 		"navigation/active_maps",
 		"navigation/regions",
 		"navigation/agents",
@@ -189,24 +195,30 @@ double Performance::get_monitor(Monitor p_monitor) const {
 			return PhysicsServer3D::get_singleton()->get_process_info(PhysicsServer3D::INFO_ISLAND_COUNT);
 		case AUDIO_OUTPUT_LATENCY:
 			return AudioServer::get_singleton()->get_output_latency();
+		case NAVIGATION_PATHFINDING_PROCESS:
+			return NavigationServer3D::get_singleton()->get_server_info_process(NavigationServer3D::INFO_PROCESS_PATHFINDING);
+		case NAVIGATION_AVOIDANCE_PROCESS:
+			return NavigationServer3D::get_singleton()->get_server_info_process(NavigationServer3D::INFO_PROCESS_AVOIDANCE);
+		case NAVIGATION_SYNCHRONIZATION_PROCESS:
+			return NavigationServer3D::get_singleton()->get_server_info_process(NavigationServer3D::INFO_PROCESS_SYNCHRONIZATION);
 		case NAVIGATION_ACTIVE_MAPS:
-			return NavigationServer3D::get_singleton()->get_process_info(NavigationServer3D::INFO_ACTIVE_MAPS);
+			return NavigationServer3D::get_singleton()->get_server_info_stat(NavigationServer3D::INFO_STAT_ACTIVE_MAPS);
 		case NAVIGATION_REGION_COUNT:
-			return NavigationServer3D::get_singleton()->get_process_info(NavigationServer3D::INFO_REGION_COUNT);
+			return NavigationServer3D::get_singleton()->get_server_info_stat(NavigationServer3D::INFO_STAT_REGION_COUNT);
 		case NAVIGATION_AGENT_COUNT:
-			return NavigationServer3D::get_singleton()->get_process_info(NavigationServer3D::INFO_AGENT_COUNT);
+			return NavigationServer3D::get_singleton()->get_server_info_stat(NavigationServer3D::INFO_STAT_AGENT_COUNT);
 		case NAVIGATION_LINK_COUNT:
-			return NavigationServer3D::get_singleton()->get_process_info(NavigationServer3D::INFO_LINK_COUNT);
+			return NavigationServer3D::get_singleton()->get_server_info_stat(NavigationServer3D::INFO_STAT_LINK_COUNT);
 		case NAVIGATION_POLYGON_COUNT:
-			return NavigationServer3D::get_singleton()->get_process_info(NavigationServer3D::INFO_POLYGON_COUNT);
+			return NavigationServer3D::get_singleton()->get_server_info_stat(NavigationServer3D::INFO_STAT_POLYGON_COUNT);
 		case NAVIGATION_EDGE_COUNT:
-			return NavigationServer3D::get_singleton()->get_process_info(NavigationServer3D::INFO_EDGE_COUNT);
+			return NavigationServer3D::get_singleton()->get_server_info_stat(NavigationServer3D::INFO_STAT_EDGE_COUNT);
 		case NAVIGATION_EDGE_MERGE_COUNT:
-			return NavigationServer3D::get_singleton()->get_process_info(NavigationServer3D::INFO_EDGE_MERGE_COUNT);
+			return NavigationServer3D::get_singleton()->get_server_info_stat(NavigationServer3D::INFO_STAT_EDGE_MERGE_COUNT);
 		case NAVIGATION_EDGE_CONNECTION_COUNT:
-			return NavigationServer3D::get_singleton()->get_process_info(NavigationServer3D::INFO_EDGE_CONNECTION_COUNT);
+			return NavigationServer3D::get_singleton()->get_server_info_stat(NavigationServer3D::INFO_STAT_EDGE_CONNECTION_COUNT);
 		case NAVIGATION_EDGE_FREE_COUNT:
-			return NavigationServer3D::get_singleton()->get_process_info(NavigationServer3D::INFO_EDGE_FREE_COUNT);
+			return NavigationServer3D::get_singleton()->get_server_info_stat(NavigationServer3D::INFO_STAT_EDGE_FREE_COUNT);
 
 		default: {
 		}
@@ -242,6 +254,9 @@ Performance::MonitorType Performance::get_monitor_type(Monitor p_monitor) const 
 		MONITOR_TYPE_QUANTITY,
 		MONITOR_TYPE_QUANTITY,
 		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_TIME,
+		MONITOR_TYPE_TIME,
+		MONITOR_TYPE_TIME,
 		MONITOR_TYPE_TIME,
 		MONITOR_TYPE_QUANTITY,
 		MONITOR_TYPE_QUANTITY,

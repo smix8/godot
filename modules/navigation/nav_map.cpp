@@ -84,6 +84,8 @@ gd::PointKey NavMap::get_point_key(const Vector3 &p_pos) const {
 }
 
 Vector<Vector3> NavMap::get_path(Vector3 p_origin, Vector3 p_destination, bool p_optimize, uint32_t p_navigation_layers, Vector<int32_t> *r_path_types, TypedArray<RID> *r_path_rids, Vector<int64_t> *r_path_owners) const {
+	uint64_t pathfinding_task_time_begin = OS::get_singleton()->get_ticks_usec();
+
 	// Clear metadata outputs.
 	if (r_path_types) {
 		r_path_types->clear();
@@ -133,6 +135,7 @@ Vector<Vector3> NavMap::get_path(Vector3 p_origin, Vector3 p_destination, bool p
 
 	// Check for trivial cases
 	if (!begin_poly || !end_poly) {
+		_new_pm_pathfinding_process += MAX(OS::get_singleton()->get_ticks_usec() - pathfinding_task_time_begin, 0.0);
 		return Vector<Vector3>();
 	}
 	if (begin_poly == end_poly) {
@@ -158,6 +161,7 @@ Vector<Vector3> NavMap::get_path(Vector3 p_origin, Vector3 p_destination, bool p
 		path.resize(2);
 		path.write[0] = begin_point;
 		path.write[1] = end_point;
+		_new_pm_pathfinding_process += MAX(OS::get_singleton()->get_ticks_usec() - pathfinding_task_time_begin, 0.0);
 		return path;
 	}
 
@@ -315,6 +319,7 @@ Vector<Vector3> NavMap::get_path(Vector3 p_origin, Vector3 p_destination, bool p
 
 	// If we did not find a route, return an empty path.
 	if (!found_route) {
+		_new_pm_pathfinding_process += MAX(OS::get_singleton()->get_ticks_usec() - pathfinding_task_time_begin, 0.0);
 		return Vector<Vector3>();
 	}
 
@@ -452,6 +457,8 @@ Vector<Vector3> NavMap::get_path(Vector3 p_origin, Vector3 p_destination, bool p
 	CRASH_COND(r_path_types && path.size() != r_path_types->size());
 	CRASH_COND(r_path_rids && path.size() != r_path_rids->size());
 	CRASH_COND(r_path_owners && path.size() != r_path_owners->size());
+
+	_new_pm_pathfinding_process += MAX(OS::get_singleton()->get_ticks_usec() - pathfinding_task_time_begin, 0.0);
 
 	return path;
 }
@@ -605,6 +612,8 @@ void NavMap::remove_agent_as_controlled(NavAgent *agent) {
 }
 
 void NavMap::sync() {
+	uint64_t synchronization_process_time_begin = OS::get_singleton()->get_ticks_usec();
+
 	// Performance Monitor
 	int _new_pm_region_count = regions.size();
 	int _new_pm_agent_count = agents.size();
@@ -906,6 +915,11 @@ void NavMap::sync() {
 	agents_dirty = false;
 
 	// Performance Monitor
+	pm_pathfinding_process = _new_pm_pathfinding_process;
+	pm_avoidance_process = _new_pm_avoidance_process;
+	_new_pm_pathfinding_process = 0.0;
+	_new_pm_avoidance_process = 0.0;
+	pm_synchronization_process = MAX(OS::get_singleton()->get_ticks_usec() - synchronization_process_time_begin, 0.0);
 	pm_region_count = _new_pm_region_count;
 	pm_agent_count = _new_pm_agent_count;
 	pm_link_count = _new_pm_link_count;
@@ -923,9 +937,15 @@ void NavMap::compute_single_step(uint32_t index, NavAgent **agent) {
 
 void NavMap::step(real_t p_deltatime) {
 	deltatime = p_deltatime;
+
+	uint64_t avoidance_process_time_begin = OS::get_singleton()->get_ticks_usec();
+
 	if (controlled_agents.size() > 0) {
 		WorkerThreadPool::GroupID group_task = WorkerThreadPool::get_singleton()->add_template_group_task(this, &NavMap::compute_single_step, controlled_agents.ptr(), controlled_agents.size(), -1, true, SNAME("NavigationMapAgents"));
 		WorkerThreadPool::get_singleton()->wait_for_group_task_completion(group_task);
+		_new_pm_avoidance_process += MAX(OS::get_singleton()->get_ticks_usec() - avoidance_process_time_begin, 0.0);
+	} else {
+		_new_pm_avoidance_process = 0.0; // reset to zero so we don't have mini spikes in the avoidance performance monitor
 	}
 }
 

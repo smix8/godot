@@ -194,34 +194,43 @@
 		<constant name="AUDIO_OUTPUT_LATENCY" value="23" enum="Monitor">
 			Output latency of the [AudioServer]. [i]Lower is better.[/i]
 		</constant>
-		<constant name="NAVIGATION_ACTIVE_MAPS" value="24" enum="Monitor">
+		<constant name="NAVIGATION_PATHFINDING_PROCESS" value="24" enum="Monitor">
+			Time it took to complete all pathfinding queries, in seconds. [i]Lower is better.[/i]
+		</constant>
+		<constant name="NAVIGATION_AVOIDANCE_PROCESS" value="25" enum="Monitor">
+			Time it took to process all avoidance calculations, in seconds. [i]Lower is better.[/i]
+		</constant>
+		<constant name="NAVIGATION_SYNCHRONIZATION_PROCESS" value="26" enum="Monitor">
+			Time it took to synchronize all navigation maps, in seconds. [i]Lower is better.[/i]
+		</constant>
+		<constant name="NAVIGATION_ACTIVE_MAPS" value="27" enum="Monitor">
 			Number of active navigation maps in the [NavigationServer3D]. This also includes the two empty default navigation maps created by World2D and World3D.
 		</constant>
-		<constant name="NAVIGATION_REGION_COUNT" value="25" enum="Monitor">
+		<constant name="NAVIGATION_REGION_COUNT" value="28" enum="Monitor">
 			Number of active navigation regions in the [NavigationServer3D].
 		</constant>
-		<constant name="NAVIGATION_AGENT_COUNT" value="26" enum="Monitor">
+		<constant name="NAVIGATION_AGENT_COUNT" value="29" enum="Monitor">
 			Number of active navigation agents processing avoidance in the [NavigationServer3D].
 		</constant>
-		<constant name="NAVIGATION_LINK_COUNT" value="27" enum="Monitor">
+		<constant name="NAVIGATION_LINK_COUNT" value="30" enum="Monitor">
 			Number of active navigation links in the [NavigationServer3D].
 		</constant>
-		<constant name="NAVIGATION_POLYGON_COUNT" value="28" enum="Monitor">
+		<constant name="NAVIGATION_POLYGON_COUNT" value="31" enum="Monitor">
 			Number of navigation mesh polygons in the [NavigationServer3D].
 		</constant>
-		<constant name="NAVIGATION_EDGE_COUNT" value="29" enum="Monitor">
+		<constant name="NAVIGATION_EDGE_COUNT" value="32" enum="Monitor">
 			Number of navigation mesh polygon edges in the [NavigationServer3D].
 		</constant>
-		<constant name="NAVIGATION_EDGE_MERGE_COUNT" value="30" enum="Monitor">
+		<constant name="NAVIGATION_EDGE_MERGE_COUNT" value="33" enum="Monitor">
 			Number of navigation mesh polygon edges that were merged due to edge key overlap in the [NavigationServer3D].
 		</constant>
-		<constant name="NAVIGATION_EDGE_CONNECTION_COUNT" value="31" enum="Monitor">
+		<constant name="NAVIGATION_EDGE_CONNECTION_COUNT" value="34" enum="Monitor">
 			Number of polygon edges that are considered connected by edge proximity [NavigationServer3D].
 		</constant>
-		<constant name="NAVIGATION_EDGE_FREE_COUNT" value="32" enum="Monitor">
+		<constant name="NAVIGATION_EDGE_FREE_COUNT" value="35" enum="Monitor">
 			Number of navigation mesh polygon edges that could not be merged in the [NavigationServer3D]. The edges still may be connected by edge proximity or with links.
 		</constant>
-		<constant name="MONITOR_MAX" value="33" enum="Monitor">
+		<constant name="MONITOR_MAX" value="36" enum="Monitor">
 			Represents the size of the [enum Monitor] enum.
 		</constant>
 	</constants>

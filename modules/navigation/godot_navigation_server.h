@@ -78,6 +78,9 @@ class GodotNavigationServer : public NavigationServer3D {
 	LocalVector<uint32_t> active_maps_update_id;
 
 	// Performance Monitor
+	uint64_t pm_pathfinding_process = 0.0;
+	uint64_t pm_avoidance_process = 0.0;
+	uint64_t pm_synchronization_process = 0.0;
 	int pm_region_count = 0;
 	int pm_agent_count = 0;
 	int pm_link_count = 0;
@@ -86,6 +89,11 @@ class GodotNavigationServer : public NavigationServer3D {
 	int pm_edge_merge_count = 0;
 	int pm_edge_connection_count = 0;
 	int pm_edge_free_count = 0;
+
+private:
+	uint64_t _max_pm_pathfinding_process = 0.0;
+	uint64_t _max_pm_avoidance_process = 0.0;
+	uint64_t _max_pm_synchronization_process = 0.0;
 
 public:
 	GodotNavigationServer();
@@ -189,7 +197,11 @@ public:
 
 	virtual NavigationUtilities::PathQueryResult _query_path(const NavigationUtilities::PathQueryParameters &p_parameters) const override;
 
-	int get_process_info(ProcessInfo p_info) const override;
+	virtual void process_monitor_begin() override;
+	virtual void process_monitor_end() override;
+
+	double get_server_info_process(ServerProcessInfo p_server_process_info) const override;
+	int get_server_info_stat(ServerStatInfo p_server_stat_info) const override;
 };
 
 #undef COMMAND_1

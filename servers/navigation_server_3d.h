@@ -260,19 +260,29 @@ public:
 	NavigationServer3D();
 	~NavigationServer3D() override;
 
-	enum ProcessInfo {
-		INFO_ACTIVE_MAPS,
-		INFO_REGION_COUNT,
-		INFO_AGENT_COUNT,
-		INFO_LINK_COUNT,
-		INFO_POLYGON_COUNT,
-		INFO_EDGE_COUNT,
-		INFO_EDGE_MERGE_COUNT,
-		INFO_EDGE_CONNECTION_COUNT,
-		INFO_EDGE_FREE_COUNT,
+	virtual void process_monitor_begin() = 0;
+	virtual void process_monitor_end() = 0;
+
+	enum ServerProcessInfo {
+		INFO_PROCESS_PATHFINDING,
+		INFO_PROCESS_AVOIDANCE,
+		INFO_PROCESS_SYNCHRONIZATION,
 	};
 
-	virtual int get_process_info(ProcessInfo p_info) const = 0;
+	enum ServerStatInfo {
+		INFO_STAT_ACTIVE_MAPS,
+		INFO_STAT_REGION_COUNT,
+		INFO_STAT_AGENT_COUNT,
+		INFO_STAT_LINK_COUNT,
+		INFO_STAT_POLYGON_COUNT,
+		INFO_STAT_EDGE_COUNT,
+		INFO_STAT_EDGE_MERGE_COUNT,
+		INFO_STAT_EDGE_CONNECTION_COUNT,
+		INFO_STAT_EDGE_FREE_COUNT,
+	};
+
+	virtual double get_server_info_process(ServerProcessInfo p_server_process_info) const = 0;
+	virtual int get_server_info_stat(ServerStatInfo p_server_stat_info) const = 0;
 
 	void set_debug_enabled(bool p_enabled);
 	bool get_debug_enabled() const;
@@ -395,6 +405,7 @@ public:
 	static NavigationServer3D *new_default_server();
 };
 
-VARIANT_ENUM_CAST(NavigationServer3D::ProcessInfo);
+VARIANT_ENUM_CAST(NavigationServer3D::ServerProcessInfo);
+VARIANT_ENUM_CAST(NavigationServer3D::ServerStatInfo);
 
 #endif // NAVIGATION_SERVER_3D_H
