@@ -1876,7 +1876,7 @@ void TileMap::_navigation_draw_quadrant_debug(TileMapQuadrant *p_quadrant) {
 	bool show_navigation = false;
 	switch (navigation_visibility_mode) {
 		case TileMap::VISIBILITY_MODE_DEFAULT:
-			show_navigation = !Engine::get_singleton()->is_editor_hint() && (get_tree() && get_tree()->is_debugging_navigation_hint());
+			show_navigation = !Engine::get_singleton()->is_editor_hint() && (get_tree() && NavigationServer2D::get_singleton()->get_debug_navigation_enabled());
 			break;
 		case TileMap::VISIBILITY_MODE_FORCE_HIDE:
 			show_navigation = false;

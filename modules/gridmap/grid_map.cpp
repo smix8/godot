@@ -659,8 +659,7 @@ bool GridMap::_octant_update(const OctantKey &p_key) {
 
 #ifdef DEBUG_ENABLED
 				// add navigation debugmesh visual instances if debug is enabled
-				SceneTree *st = SceneTree::get_singleton();
-				if (st && st->is_debugging_navigation_hint()) {
+				if (Engine::get_singleton()->is_editor_hint() || NavigationServer3D::get_singleton()->get_debug_navigation_enabled()) {
 					if (!nm.navigation_mesh_debug_instance.is_valid()) {
 						RID navigation_mesh_debug_rid = navigation_mesh->get_debug_mesh()->get_rid();
 						nm.navigation_mesh_debug_instance = RS::get_singleton()->instance_create();

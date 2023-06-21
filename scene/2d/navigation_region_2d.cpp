@@ -241,7 +241,7 @@ Ref<NavigationPolygon> NavigationRegion2D::get_navigation_polygon() const {
 }
 
 void NavigationRegion2D::_navigation_polygon_changed() {
-	if (is_inside_tree() && (Engine::get_singleton()->is_editor_hint() || get_tree()->is_debugging_navigation_hint())) {
+	if (is_inside_tree() && (Engine::get_singleton()->is_editor_hint() || NavigationServer2D::get_singleton()->get_debug_navigation_enabled())) {
 		queue_redraw();
 	}
 	if (navigation_polygon.is_valid()) {

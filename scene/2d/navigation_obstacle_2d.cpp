@@ -164,7 +164,7 @@ NavigationObstacle2D::~NavigationObstacle2D() {
 void NavigationObstacle2D::set_vertices(const Vector<Vector2> &p_vertices) {
 	vertices = p_vertices;
 	NavigationServer2D::get_singleton()->obstacle_set_vertices(obstacle, vertices);
-	if (is_inside_tree() && (Engine::get_singleton()->is_editor_hint() || get_tree()->is_debugging_navigation_hint())) {
+	if (is_inside_tree() && (Engine::get_singleton()->is_editor_hint() || NavigationServer2D::get_singleton()->get_debug_navigation_enabled())) {
 		queue_redraw();
 	}
 }
@@ -195,7 +195,7 @@ void NavigationObstacle2D::set_radius(real_t p_radius) {
 	radius = p_radius;
 
 	NavigationServer2D::get_singleton()->obstacle_set_radius(obstacle, radius);
-	if (is_inside_tree() && (Engine::get_singleton()->is_editor_hint() || get_tree()->is_debugging_navigation_hint())) {
+	if (is_inside_tree() && (Engine::get_singleton()->is_editor_hint() || NavigationServer2D::get_singleton()->get_debug_navigation_enabled())) {
 		queue_redraw();
 	}
 }

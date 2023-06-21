@@ -131,7 +131,9 @@ private:
 #ifdef DEBUG_ENABLED
 	bool debug_collisions_hint = false;
 	bool debug_paths_hint = false;
+#ifndef DISABLE_DEPRECATED
 	bool debug_navigation_hint = false;
+#endif // DISABLE_DEPRECATED
 #endif
 	bool paused = false;
 	int root_lock = 0;
@@ -344,8 +346,10 @@ public:
 	void set_debug_paths_hint(bool p_enabled);
 	bool is_debugging_paths_hint() const;
 
+#ifndef DISABLE_DEPRECATED
 	void set_debug_navigation_hint(bool p_enabled);
 	bool is_debugging_navigation_hint() const;
+#endif // DISABLE_DEPRECATED
 #else
 	void set_debug_collisions_hint(bool p_enabled) {}
 	bool is_debugging_collisions_hint() const { return false; }
@@ -353,8 +357,10 @@ public:
 	void set_debug_paths_hint(bool p_enabled) {}
 	bool is_debugging_paths_hint() const { return false; }
 
+#ifndef DISABLE_DEPRECATED
 	void set_debug_navigation_hint(bool p_enabled) {}
 	bool is_debugging_navigation_hint() const { return false; }
+#endif // DISABLE_DEPRECATED
 #endif
 
 	void set_debug_collisions_color(const Color &p_color);
