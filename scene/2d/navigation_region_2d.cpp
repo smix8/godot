@@ -49,7 +49,7 @@ void NavigationRegion2D::set_enabled(bool p_enabled) {
 	NavigationServer2D::get_singleton()->region_set_enabled(region, enabled);
 
 #ifdef DEBUG_ENABLED
-	if (Engine::get_singleton()->is_editor_hint() || NavigationServer2D::get_singleton()->get_debug_navigation_enabled()) {
+	if (Engine::get_singleton()->is_editor_hint() || NavigationServer2D::get_singleton()->get_debug_enabled()) {
 		queue_redraw();
 	}
 #endif // DEBUG_ENABLED
@@ -259,7 +259,7 @@ bool NavigationRegion2D::is_baking() const {
 }
 
 void NavigationRegion2D::_navigation_polygon_changed() {
-	if (is_inside_tree() && (Engine::get_singleton()->is_editor_hint() || get_tree()->is_debugging_navigation_hint())) {
+	if (is_inside_tree() && (Engine::get_singleton()->is_editor_hint() || NavigationServer2D::get_singleton()->get_debug_enabled())) {
 		queue_redraw();
 	}
 	if (navigation_polygon.is_valid()) {

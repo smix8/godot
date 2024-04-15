@@ -1095,7 +1095,7 @@ void TileMapLayer::_navigation_draw_cell_debug(const RID &p_canvas_item, const V
 	bool show_navigation = false;
 	switch (navigation_visibility_mode) {
 		case TileMapLayer::DEBUG_VISIBILITY_MODE_DEFAULT:
-			show_navigation = !Engine::get_singleton()->is_editor_hint() && get_tree()->is_debugging_navigation_hint();
+			show_navigation = !Engine::get_singleton()->is_editor_hint() && NavigationServer2D::get_singleton()->get_debug_enabled();
 			break;
 		case TileMapLayer::DEBUG_VISIBILITY_MODE_FORCE_HIDE:
 			show_navigation = false;

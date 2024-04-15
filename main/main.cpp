@@ -3511,7 +3511,9 @@ int Main::start() {
 			sml->set_debug_paths_hint(true);
 		}
 		if (debug_navigation) {
+#ifndef DISABLE_DEPRECATED
 			sml->set_debug_navigation_hint(true);
+#endif // DISABLE_DEPRECATED
 			NavigationServer3D::get_singleton()->set_debug_navigation_enabled(true);
 		}
 		if (debug_avoidance) {
