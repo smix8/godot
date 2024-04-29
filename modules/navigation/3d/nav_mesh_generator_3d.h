@@ -36,7 +36,6 @@
 #include "core/object/class_db.h"
 #include "core/object/worker_thread_pool.h"
 #include "core/templates/rid_owner.h"
-#include "modules/modules_enabled.gen.h" // For csg, gridmap.
 
 class Node;
 class NavigationMesh;
@@ -85,17 +84,6 @@ class NavMeshGenerator3D : public Object {
 	static void generator_parse_geometry_node(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_node, bool p_recurse_children);
 	static void generator_parse_source_geometry_data(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_root_node);
 	static void generator_bake_from_source_geometry_data(Ref<NavigationMesh> p_navigation_mesh, const Ref<NavigationMeshSourceGeometryData3D> &p_source_geometry_data);
-
-	static void generator_parse_meshinstance3d_node(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_node);
-	static void generator_parse_multimeshinstance3d_node(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_node);
-	static void generator_parse_staticbody3d_node(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_node);
-#ifdef MODULE_CSG_ENABLED
-	static void generator_parse_csgshape3d_node(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_node);
-#endif // MODULE_CSG_ENABLED
-#ifdef MODULE_GRIDMAP_ENABLED
-	static void generator_parse_gridmap_node(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_node);
-#endif // MODULE_GRIDMAP_ENABLED
-	static void generator_parse_navigationobstacle_node(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_node);
 
 	static bool generator_emit_callback(const Callable &p_callback);
 
