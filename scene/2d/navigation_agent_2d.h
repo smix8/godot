@@ -31,16 +31,12 @@
 #ifndef NAVIGATION_AGENT_2D_H
 #define NAVIGATION_AGENT_2D_H
 
-#include "scene/main/node.h"
+#include "scene/2d/node_2d.h"
 #include "servers/navigation/navigation_path_query_parameters_2d.h"
 #include "servers/navigation/navigation_path_query_result_2d.h"
 
-class Node2D;
-
-class NavigationAgent2D : public Node {
-	GDCLASS(NavigationAgent2D, Node);
-
-	Node2D *agent_parent = nullptr;
+class NavigationAgent2D : public Node2D {
+	GDCLASS(NavigationAgent2D, Node2D);
 
 	RID agent;
 	RID map_override;
@@ -122,8 +118,6 @@ public:
 
 	void set_avoidance_enabled(bool p_enabled);
 	bool get_avoidance_enabled() const;
-
-	void set_agent_parent(Node *p_agent_parent);
 
 	void set_navigation_layers(uint32_t p_navigation_layers);
 	uint32_t get_navigation_layers() const;
@@ -254,6 +248,10 @@ private:
 	void _trigger_waypoint_reached();
 	void _transition_to_navigation_finished();
 	void _transition_to_target_reached();
+
+	void _agent_enter_tree();
+	void _agent_exit_tree();
+	void _agent_physics_process();
 
 #ifdef DEBUG_ENABLED
 	void _navigation_debug_changed();

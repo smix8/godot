@@ -226,93 +226,25 @@ bool NavigationAgent3D::_get(const StringName &p_name, Variant &r_ret) const {
 
 void NavigationAgent3D::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_POST_ENTER_TREE: {
-			// need to use POST_ENTER_TREE cause with normal ENTER_TREE not all required Nodes are ready.
-			// cannot use READY as ready does not get called if Node is re-added to SceneTree
-			set_agent_parent(get_parent());
-			set_physics_process_internal(true);
+		case NOTIFICATION_ENTER_TREE: {
+			_agent_enter_tree();
 
-			if (agent_parent && avoidance_enabled) {
-				NavigationServer3D::get_singleton()->agent_set_position(agent, agent_parent->get_global_transform().origin);
-			}
-
-#ifdef DEBUG_ENABLED
-			if (NavigationServer3D::get_singleton()->get_debug_enabled()) {
-				debug_path_dirty = true;
-			}
-#endif // DEBUG_ENABLED
-
-		} break;
-
-		case NOTIFICATION_PARENTED: {
-			if (is_inside_tree() && (get_parent() != agent_parent)) {
-				// only react to PARENTED notifications when already inside_tree and parent changed, e.g. users switch nodes around
-				// PARENTED notification fires also when Node is added in scripts to a parent
-				// this would spam transforms fails and world fails while Node is outside SceneTree
-				// when node gets reparented when joining the tree POST_ENTER_TREE takes care of this
-				set_agent_parent(get_parent());
-				set_physics_process_internal(true);
-			}
-		} break;
-
-		case NOTIFICATION_UNPARENTED: {
-			// if agent has no parent no point in processing it until reparented
-			set_agent_parent(nullptr);
-			set_physics_process_internal(false);
 		} break;
 
 		case NOTIFICATION_EXIT_TREE: {
-			set_agent_parent(nullptr);
-			set_physics_process_internal(false);
+			_agent_exit_tree();
 
-#ifdef DEBUG_ENABLED
-			if (debug_path_instance.is_valid()) {
-				RS::get_singleton()->instance_set_visible(debug_path_instance, false);
-			}
-#endif // DEBUG_ENABLED
 		} break;
 
-		case NOTIFICATION_PAUSED: {
-			if (agent_parent) {
-				NavigationServer3D::get_singleton()->agent_set_paused(get_rid(), !agent_parent->can_process());
-			}
-		} break;
-
+		case NOTIFICATION_PAUSED:
 		case NOTIFICATION_UNPAUSED: {
-			if (agent_parent) {
-				NavigationServer3D::get_singleton()->agent_set_paused(get_rid(), !agent_parent->can_process());
-			}
+			NavigationServer3D::get_singleton()->agent_set_paused(get_rid(), !can_process());
+
 		} break;
 
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
-			if (agent_parent && avoidance_enabled) {
-				NavigationServer3D::get_singleton()->agent_set_position(agent, agent_parent->get_global_position());
-			}
-			if (agent_parent && target_position_submitted) {
-				if (velocity_submitted) {
-					velocity_submitted = false;
-					if (avoidance_enabled) {
-						if (!use_3d_avoidance) {
-							if (keep_y_velocity) {
-								stored_y_velocity = velocity.y;
-							}
-							velocity.y = 0.0;
-						}
-						NavigationServer3D::get_singleton()->agent_set_velocity(agent, velocity);
-					}
-				}
-				if (velocity_forced_submitted) {
-					velocity_forced_submitted = false;
-					if (avoidance_enabled) {
-						NavigationServer3D::get_singleton()->agent_set_velocity_forced(agent, velocity_forced);
-					}
-				}
-			}
-#ifdef DEBUG_ENABLED
-			if (debug_path_dirty) {
-				_update_debug_path();
-			}
-#endif // DEBUG_ENABLED
+			_agent_physics_process();
+
 		} break;
 	}
 }
@@ -393,31 +325,73 @@ bool NavigationAgent3D::get_avoidance_enabled() const {
 	return avoidance_enabled;
 }
 
-void NavigationAgent3D::set_agent_parent(Node *p_agent_parent) {
-	if (agent_parent == p_agent_parent) {
+void NavigationAgent3D::_agent_enter_tree() {
+	if (map_override.is_valid()) {
+		NavigationServer3D::get_singleton()->agent_set_map(get_rid(), map_override);
+	} else if (is_inside_tree()) {
+		NavigationServer3D::get_singleton()->agent_set_map(get_rid(), get_world_3d()->get_navigation_map());
+	}
+
+	NavigationServer3D::get_singleton()->agent_set_position(agent, get_global_position());
+
+	if (avoidance_enabled) {
+		NavigationServer3D::get_singleton()->agent_set_avoidance_callback(agent, callable_mp(this, &NavigationAgent3D::_avoidance_done));
+	}
+
+	set_physics_process_internal(true);
+
+#ifdef DEBUG_ENABLED
+	if (NavigationServer3D::get_singleton()->get_debug_enabled()) {
+		debug_path_dirty = true;
+	}
+#endif // DEBUG_ENABLED
+}
+
+void NavigationAgent3D::_agent_exit_tree() {
+	set_physics_process_internal(false);
+
+	NavigationServer3D::get_singleton()->agent_set_map(get_rid(), RID());
+	NavigationServer3D::get_singleton()->agent_set_avoidance_callback(agent, Callable());
+
+#ifdef DEBUG_ENABLED
+	if (debug_path_instance.is_valid()) {
+		RS::get_singleton()->instance_set_visible(debug_path_instance, false);
+	}
+#endif // DEBUG_ENABLED
+}
+
+void NavigationAgent3D::_agent_physics_process() {
+	if (!is_inside_tree()) {
 		return;
 	}
 
-	// remove agent from any avoidance map before changing parent or there will be leftovers on the RVO map
-	NavigationServer3D::get_singleton()->agent_set_avoidance_callback(agent, Callable());
+	NavigationServer3D::get_singleton()->agent_set_position(agent, get_global_position());
 
-	if (Object::cast_to<Node3D>(p_agent_parent) != nullptr) {
-		// place agent on navigation map first or else the RVO agent callback creation fails silently later
-		agent_parent = Object::cast_to<Node3D>(p_agent_parent);
-		if (map_override.is_valid()) {
-			NavigationServer3D::get_singleton()->agent_set_map(get_rid(), map_override);
-		} else {
-			NavigationServer3D::get_singleton()->agent_set_map(get_rid(), agent_parent->get_world_3d()->get_navigation_map());
+	if (target_position_submitted) {
+		if (velocity_submitted) {
+			velocity_submitted = false;
+			if (avoidance_enabled) {
+				if (!use_3d_avoidance) {
+					if (keep_y_velocity) {
+						stored_y_velocity = velocity.y;
+					}
+					velocity.y = 0.0;
+				}
+				NavigationServer3D::get_singleton()->agent_set_velocity(agent, velocity);
+			}
 		}
-
-		// create new avoidance callback if enabled
-		if (avoidance_enabled) {
-			NavigationServer3D::get_singleton()->agent_set_avoidance_callback(agent, callable_mp(this, &NavigationAgent3D::_avoidance_done));
+		if (velocity_forced_submitted) {
+			velocity_forced_submitted = false;
+			if (avoidance_enabled) {
+				NavigationServer3D::get_singleton()->agent_set_velocity_forced(agent, velocity_forced);
+			}
 		}
-	} else {
-		agent_parent = nullptr;
-		NavigationServer3D::get_singleton()->agent_set_map(get_rid(), RID());
 	}
+#ifdef DEBUG_ENABLED
+	if (debug_path_dirty) {
+		_update_debug_path();
+	}
+#endif // DEBUG_ENABLED
 }
 
 void NavigationAgent3D::set_navigation_layers(uint32_t p_navigation_layers) {
@@ -512,8 +486,8 @@ void NavigationAgent3D::set_navigation_map(RID p_navigation_map) {
 RID NavigationAgent3D::get_navigation_map() const {
 	if (map_override.is_valid()) {
 		return map_override;
-	} else if (agent_parent != nullptr) {
-		return agent_parent->get_world_3d()->get_navigation_map();
+	} else if (is_inside_tree()) {
+		return get_world_3d()->get_navigation_map();
 	}
 	return RID();
 }
@@ -651,16 +625,16 @@ Vector3 NavigationAgent3D::get_next_path_position() {
 
 	const Vector<Vector3> &navigation_path = navigation_result->get_path();
 	if (navigation_path.size() == 0) {
-		ERR_FAIL_NULL_V_MSG(agent_parent, Vector3(), "The agent has no parent.");
-		return agent_parent->get_global_position();
+		ERR_FAIL_COND_V_MSG(is_inside_tree(), Vector3(), "The agent is not inside the SceneTree.");
+		return get_global_position();
 	} else {
 		return navigation_path[navigation_path_index] - Vector3(0, path_height_offset, 0);
 	}
 }
 
 real_t NavigationAgent3D::distance_to_target() const {
-	ERR_FAIL_NULL_V_MSG(agent_parent, 0.0, "The agent has no parent.");
-	return agent_parent->get_global_position().distance_to(target_position);
+	ERR_FAIL_COND_V_MSG(is_inside_tree(), 0.0, "The agent is not inside the SceneTree.");
+	return get_global_position().distance_to(target_position);
 }
 
 bool NavigationAgent3D::is_target_reached() const {
@@ -727,17 +701,14 @@ PackedStringArray NavigationAgent3D::get_configuration_warnings() const {
 }
 
 void NavigationAgent3D::_update_navigation() {
-	if (agent_parent == nullptr) {
-		return;
-	}
-	if (!agent_parent->is_inside_tree()) {
+	if (!is_inside_tree()) {
 		return;
 	}
 	if (!target_position_submitted) {
 		return;
 	}
 
-	Vector3 origin = agent_parent->get_global_position();
+	Vector3 origin = get_global_position();
 
 	bool reload_path = false;
 
@@ -772,7 +743,7 @@ void NavigationAgent3D::_update_navigation() {
 		if (map_override.is_valid()) {
 			navigation_query->set_map(map_override);
 		} else {
-			navigation_query->set_map(agent_parent->get_world_3d()->get_navigation_map());
+			navigation_query->set_map(get_world_3d()->get_navigation_map());
 		}
 
 		NavigationServer3D::get_singleton()->query_path(navigation_query, navigation_result);
@@ -917,7 +888,7 @@ void NavigationAgent3D::_transition_to_navigation_finished() {
 	target_position_submitted = false;
 
 	if (avoidance_enabled) {
-		NavigationServer3D::get_singleton()->agent_set_position(agent, agent_parent->get_global_transform().origin);
+		NavigationServer3D::get_singleton()->agent_set_position(agent, get_global_position());
 		NavigationServer3D::get_singleton()->agent_set_velocity(agent, Vector3(0.0, 0.0, 0.0));
 		NavigationServer3D::get_singleton()->agent_set_velocity_forced(agent, Vector3(0.0, 0.0, 0.0));
 		stored_y_velocity = 0.0;
@@ -1083,7 +1054,7 @@ void NavigationAgent3D::_update_debug_path() {
 		return;
 	}
 
-	if (!(agent_parent && agent_parent->is_inside_tree())) {
+	if (!is_inside_tree()) {
 		return;
 	}
 
@@ -1144,7 +1115,7 @@ void NavigationAgent3D::_update_debug_path() {
 	}
 
 	RS::get_singleton()->instance_set_base(debug_path_instance, debug_path_mesh->get_rid());
-	RS::get_singleton()->instance_set_scenario(debug_path_instance, agent_parent->get_world_3d()->get_scenario());
-	RS::get_singleton()->instance_set_visible(debug_path_instance, agent_parent->is_visible_in_tree());
+	RS::get_singleton()->instance_set_scenario(debug_path_instance, get_world_3d()->get_scenario());
+	RS::get_singleton()->instance_set_visible(debug_path_instance, is_visible_in_tree());
 }
 #endif // DEBUG_ENABLED

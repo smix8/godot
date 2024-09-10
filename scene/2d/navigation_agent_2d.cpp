@@ -207,92 +207,31 @@ bool NavigationAgent2D::_get(const StringName &p_name, Variant &r_ret) const {
 
 void NavigationAgent2D::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_POST_ENTER_TREE: {
-			// need to use POST_ENTER_TREE cause with normal ENTER_TREE not all required Nodes are ready.
-			// cannot use READY as ready does not get called if Node is re-added to SceneTree
-			set_agent_parent(get_parent());
-			set_physics_process_internal(true);
+		case NOTIFICATION_ENTER_TREE: {
+			_agent_enter_tree();
 
-			if (agent_parent && avoidance_enabled) {
-				NavigationServer2D::get_singleton()->agent_set_position(agent, agent_parent->get_global_position());
-			}
-
-#ifdef DEBUG_ENABLED
-			if (NavigationServer2D::get_singleton()->get_debug_enabled()) {
-				debug_path_dirty = true;
-			}
-#endif // DEBUG_ENABLED
-
-		} break;
-
-		case NOTIFICATION_PARENTED: {
-			if (is_inside_tree() && (get_parent() != agent_parent)) {
-				// only react to PARENTED notifications when already inside_tree and parent changed, e.g. users switch nodes around
-				// PARENTED notification fires also when Node is added in scripts to a parent
-				// this would spam transforms fails and world fails while Node is outside SceneTree
-				// when node gets reparented when joining the tree POST_ENTER_TREE takes care of this
-				set_agent_parent(get_parent());
-				set_physics_process_internal(true);
-			}
-		} break;
-
-		case NOTIFICATION_UNPARENTED: {
-			// if agent has no parent no point in processing it until reparented
-			set_agent_parent(nullptr);
-			set_physics_process_internal(false);
 		} break;
 
 		case NOTIFICATION_EXIT_TREE: {
-			set_agent_parent(nullptr);
-			set_physics_process_internal(false);
+			_agent_exit_tree();
 
-#ifdef DEBUG_ENABLED
-			if (debug_path_instance.is_valid()) {
-				RenderingServer::get_singleton()->canvas_item_set_visible(debug_path_instance, false);
-			}
-#endif // DEBUG_ENABLED
 		} break;
 
-		case NOTIFICATION_PAUSED: {
-			if (agent_parent) {
-				NavigationServer2D::get_singleton()->agent_set_paused(get_rid(), !agent_parent->can_process());
-			}
-		} break;
-
+		case NOTIFICATION_PAUSED:
 		case NOTIFICATION_UNPAUSED: {
-			if (agent_parent) {
-				NavigationServer2D::get_singleton()->agent_set_paused(get_rid(), !agent_parent->can_process());
-			}
+			NavigationServer2D::get_singleton()->agent_set_paused(get_rid(), !can_process());
 		} break;
 
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
-			if (agent_parent && avoidance_enabled) {
-				NavigationServer2D::get_singleton()->agent_set_position(agent, agent_parent->get_global_position());
-			}
-			if (agent_parent && target_position_submitted) {
-				if (velocity_submitted) {
-					velocity_submitted = false;
-					if (avoidance_enabled) {
-						NavigationServer2D::get_singleton()->agent_set_velocity(agent, velocity);
-					}
-				}
-				if (velocity_forced_submitted) {
-					velocity_forced_submitted = false;
-					if (avoidance_enabled) {
-						NavigationServer2D::get_singleton()->agent_set_velocity_forced(agent, velocity_forced);
-					}
-				}
-			}
-#ifdef DEBUG_ENABLED
-			if (debug_path_dirty) {
-				_update_debug_path();
-			}
-#endif // DEBUG_ENABLED
+			_agent_physics_process();
+
 		} break;
 	}
 }
 
 NavigationAgent2D::NavigationAgent2D() {
+	set_hide_clip_children(true);
+
 	agent = NavigationServer2D::get_singleton()->agent_create();
 
 	NavigationServer2D::get_singleton()->agent_set_neighbor_distance(agent, neighbor_distance);
@@ -356,31 +295,71 @@ bool NavigationAgent2D::get_avoidance_enabled() const {
 	return avoidance_enabled;
 }
 
-void NavigationAgent2D::set_agent_parent(Node *p_agent_parent) {
-	if (agent_parent == p_agent_parent) {
+void NavigationAgent2D::_agent_enter_tree() {
+	if (!is_inside_tree()) {
 		return;
 	}
 
-	// remove agent from any avoidance map before changing parent or there will be leftovers on the RVO map
+	if (map_override.is_valid()) {
+		NavigationServer2D::get_singleton()->agent_set_map(get_rid(), map_override);
+	} else {
+		NavigationServer2D::get_singleton()->agent_set_map(get_rid(), get_world_2d()->get_navigation_map());
+	}
+
+	NavigationServer2D::get_singleton()->agent_set_position(agent, get_global_position());
+
+	if (avoidance_enabled) {
+		NavigationServer2D::get_singleton()->agent_set_avoidance_callback(agent, callable_mp(this, &NavigationAgent2D::_avoidance_done));
+	}
+
+	set_physics_process_internal(true);
+
+#ifdef DEBUG_ENABLED
+	if (NavigationServer2D::get_singleton()->get_debug_enabled()) {
+		debug_path_dirty = true;
+	}
+#endif // DEBUG_ENABLED
+}
+
+void NavigationAgent2D::_agent_exit_tree() {
+	set_physics_process_internal(false);
+
+	NavigationServer2D::get_singleton()->agent_set_map(get_rid(), RID());
 	NavigationServer2D::get_singleton()->agent_set_avoidance_callback(agent, Callable());
 
-	if (Object::cast_to<Node2D>(p_agent_parent) != nullptr) {
-		// place agent on navigation map first or else the RVO agent callback creation fails silently later
-		agent_parent = Object::cast_to<Node2D>(p_agent_parent);
-		if (map_override.is_valid()) {
-			NavigationServer2D::get_singleton()->agent_set_map(get_rid(), map_override);
-		} else {
-			NavigationServer2D::get_singleton()->agent_set_map(get_rid(), agent_parent->get_world_2d()->get_navigation_map());
-		}
-
-		// create new avoidance callback if enabled
-		if (avoidance_enabled) {
-			NavigationServer2D::get_singleton()->agent_set_avoidance_callback(agent, callable_mp(this, &NavigationAgent2D::_avoidance_done));
-		}
-	} else {
-		agent_parent = nullptr;
-		NavigationServer2D::get_singleton()->agent_set_map(get_rid(), RID());
+#ifdef DEBUG_ENABLED
+	if (debug_path_instance.is_valid()) {
+		RenderingServer::get_singleton()->canvas_item_set_visible(debug_path_instance, false);
 	}
+#endif // DEBUG_ENABLED
+}
+
+void NavigationAgent2D::_agent_physics_process() {
+	if (!is_inside_tree()) {
+		return;
+	}
+
+	NavigationServer2D::get_singleton()->agent_set_position(agent, get_global_position());
+
+	if (target_position_submitted) {
+		if (velocity_submitted) {
+			velocity_submitted = false;
+			if (avoidance_enabled) {
+				NavigationServer2D::get_singleton()->agent_set_velocity(agent, velocity);
+			}
+		}
+		if (velocity_forced_submitted) {
+			velocity_forced_submitted = false;
+			if (avoidance_enabled) {
+				NavigationServer2D::get_singleton()->agent_set_velocity_forced(agent, velocity_forced);
+			}
+		}
+	}
+#ifdef DEBUG_ENABLED
+	if (debug_path_dirty) {
+		_update_debug_path();
+	}
+#endif // DEBUG_ENABLED
 }
 
 void NavigationAgent2D::set_navigation_layers(uint32_t p_navigation_layers) {
@@ -475,8 +454,8 @@ void NavigationAgent2D::set_navigation_map(RID p_navigation_map) {
 RID NavigationAgent2D::get_navigation_map() const {
 	if (map_override.is_valid()) {
 		return map_override;
-	} else if (agent_parent != nullptr) {
-		return agent_parent->get_world_2d()->get_navigation_map();
+	} else if (is_inside_tree()) {
+		return get_world_2d()->get_navigation_map();
 	}
 	return RID();
 }
@@ -587,16 +566,16 @@ Vector2 NavigationAgent2D::get_next_path_position() {
 
 	const Vector<Vector2> &navigation_path = navigation_result->get_path();
 	if (navigation_path.size() == 0) {
-		ERR_FAIL_NULL_V_MSG(agent_parent, Vector2(), "The agent has no parent.");
-		return agent_parent->get_global_position();
+		ERR_FAIL_COND_V_MSG(is_inside_tree(), Vector2(), "The agent is not inside the SceneTree.");
+		return get_global_position();
 	} else {
 		return navigation_path[navigation_path_index];
 	}
 }
 
 real_t NavigationAgent2D::distance_to_target() const {
-	ERR_FAIL_NULL_V_MSG(agent_parent, 0.0, "The agent has no parent.");
-	return agent_parent->get_global_position().distance_to(target_position);
+	ERR_FAIL_COND_V_MSG(is_inside_tree(), 0.0, "The agent is not inside the SceneTree.");
+	return get_global_position().distance_to(target_position);
 }
 
 bool NavigationAgent2D::is_target_reached() const {
@@ -661,17 +640,14 @@ PackedStringArray NavigationAgent2D::get_configuration_warnings() const {
 }
 
 void NavigationAgent2D::_update_navigation() {
-	if (agent_parent == nullptr) {
-		return;
-	}
-	if (!agent_parent->is_inside_tree()) {
+	if (!is_inside_tree()) {
 		return;
 	}
 	if (!target_position_submitted) {
 		return;
 	}
 
-	Vector2 origin = agent_parent->get_global_position();
+	Vector2 origin = get_global_position();
 
 	bool reload_path = false;
 
@@ -704,7 +680,7 @@ void NavigationAgent2D::_update_navigation() {
 		if (map_override.is_valid()) {
 			navigation_query->set_map(map_override);
 		} else {
-			navigation_query->set_map(agent_parent->get_world_2d()->get_navigation_map());
+			navigation_query->set_map(get_world_2d()->get_navigation_map());
 		}
 
 		NavigationServer2D::get_singleton()->query_path(navigation_query, navigation_result);
@@ -847,8 +823,8 @@ void NavigationAgent2D::_transition_to_navigation_finished() {
 	navigation_finished = true;
 	target_position_submitted = false;
 
+	NavigationServer2D::get_singleton()->agent_set_position(agent, get_global_position());
 	if (avoidance_enabled) {
-		NavigationServer2D::get_singleton()->agent_set_position(agent, agent_parent->get_global_position());
 		NavigationServer2D::get_singleton()->agent_set_velocity(agent, Vector2(0.0, 0.0));
 		NavigationServer2D::get_singleton()->agent_set_velocity_forced(agent, Vector2(0.0, 0.0));
 	}
@@ -1024,13 +1000,13 @@ void NavigationAgent2D::_update_debug_path() {
 		return;
 	}
 
-	if (!(agent_parent && agent_parent->is_inside_tree())) {
+	if (!is_inside_tree()) {
 		return;
 	}
 
-	RenderingServer::get_singleton()->canvas_item_set_parent(debug_path_instance, agent_parent->get_canvas());
+	RenderingServer::get_singleton()->canvas_item_set_parent(debug_path_instance, get_canvas());
 	RenderingServer::get_singleton()->canvas_item_set_z_index(debug_path_instance, RS::CANVAS_ITEM_Z_MAX - 1);
-	RenderingServer::get_singleton()->canvas_item_set_visible(debug_path_instance, agent_parent->is_visible_in_tree());
+	RenderingServer::get_singleton()->canvas_item_set_visible(debug_path_instance, is_visible_in_tree());
 
 	const Vector<Vector2> &navigation_path = navigation_result->get_path();
 
