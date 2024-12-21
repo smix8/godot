@@ -56,6 +56,8 @@ public:
 	RID get_space() const;
 	RID get_navigation_map() const;
 
+	bool has_navigation_map() const;
+
 	PhysicsDirectSpaceState2D *get_direct_space_state();
 
 	void register_viewport(Viewport *p_viewport);

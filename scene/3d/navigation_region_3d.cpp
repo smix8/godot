@@ -46,30 +46,6 @@ void NavigationRegion3D::set_enabled(bool p_enabled) {
 
 	NavigationServer3D::get_singleton()->region_set_enabled(region, enabled);
 
-#ifdef DEBUG_ENABLED
-	if (debug_instance.is_valid()) {
-		if (!is_enabled()) {
-			if (debug_mesh.is_valid()) {
-				if (debug_mesh->get_surface_count() > 0) {
-					RS::get_singleton()->instance_set_surface_override_material(debug_instance, 0, NavigationServer3D::get_singleton()->get_debug_navigation_geometry_face_disabled_material()->get_rid());
-				}
-				if (debug_mesh->get_surface_count() > 1) {
-					RS::get_singleton()->instance_set_surface_override_material(debug_instance, 1, NavigationServer3D::get_singleton()->get_debug_navigation_geometry_edge_disabled_material()->get_rid());
-				}
-			}
-		} else {
-			if (debug_mesh.is_valid()) {
-				if (debug_mesh->get_surface_count() > 0) {
-					RS::get_singleton()->instance_set_surface_override_material(debug_instance, 0, RID());
-				}
-				if (debug_mesh->get_surface_count() > 1) {
-					RS::get_singleton()->instance_set_surface_override_material(debug_instance, 1, RID());
-				}
-			}
-		}
-	}
-#endif // DEBUG_ENABLED
-
 	update_gizmos();
 }
 
@@ -168,11 +144,6 @@ void NavigationRegion3D::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_TRANSFORM_CHANGED: {
-			set_physics_process_internal(true);
-		} break;
-
-		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
-			set_physics_process_internal(false);
 			_region_update_transform();
 		} break;
 
@@ -194,22 +165,6 @@ void NavigationRegion3D::set_navigation_mesh(const Ref<NavigationMesh> &p_naviga
 	}
 
 	NavigationServer3D::get_singleton()->region_set_navigation_mesh(region, p_navigation_mesh);
-
-#ifdef DEBUG_ENABLED
-	if (is_inside_tree() && NavigationServer3D::get_singleton()->get_debug_navigation_enabled()) {
-		if (navigation_mesh.is_valid()) {
-			_update_debug_mesh();
-			_update_debug_edge_connections_mesh();
-		} else {
-			if (debug_instance.is_valid()) {
-				RS::get_singleton()->instance_set_visible(debug_instance, false);
-			}
-			if (debug_edge_connections_instance.is_valid()) {
-				RS::get_singleton()->instance_set_visible(debug_edge_connections_instance, false);
-			}
-		}
-	}
-#endif // DEBUG_ENABLED
 
 	emit_signal(SNAME("navigation_mesh_changed"));
 
@@ -347,28 +302,7 @@ bool NavigationRegion3D::_get(const StringName &p_name, Variant &r_ret) const {
 void NavigationRegion3D::_navigation_mesh_changed() {
 	update_gizmos();
 	update_configuration_warnings();
-
-#ifdef DEBUG_ENABLED
-	_update_debug_edge_connections_mesh();
-#endif // DEBUG_ENABLED
 }
-
-#ifdef DEBUG_ENABLED
-void NavigationRegion3D::_navigation_map_changed(RID p_map) {
-	if (is_inside_tree() && p_map == get_world_3d()->get_navigation_map()) {
-		_update_debug_edge_connections_mesh();
-	}
-}
-#endif // DEBUG_ENABLED
-
-#ifdef DEBUG_ENABLED
-void NavigationRegion3D::_navigation_debug_changed() {
-	if (is_inside_tree()) {
-		_update_debug_mesh();
-		_update_debug_edge_connections_mesh();
-	}
-}
-#endif // DEBUG_ENABLED
 
 void NavigationRegion3D::_region_enter_navigation_map() {
 	if (!is_inside_tree()) {
@@ -385,24 +319,10 @@ void NavigationRegion3D::_region_enter_navigation_map() {
 	NavigationServer3D::get_singleton()->region_set_transform(region, current_global_transform);
 
 	NavigationServer3D::get_singleton()->region_set_enabled(region, enabled);
-
-#ifdef DEBUG_ENABLED
-	if (NavigationServer3D::get_singleton()->get_debug_navigation_enabled()) {
-		_update_debug_mesh();
-	}
-#endif // DEBUG_ENABLED
 }
 
 void NavigationRegion3D::_region_exit_navigation_map() {
 	NavigationServer3D::get_singleton()->region_set_map(region, RID());
-#ifdef DEBUG_ENABLED
-	if (debug_instance.is_valid()) {
-		RS::get_singleton()->instance_set_visible(debug_instance, false);
-	}
-	if (debug_edge_connections_instance.is_valid()) {
-		RS::get_singleton()->instance_set_visible(debug_edge_connections_instance, false);
-	}
-#endif // DEBUG_ENABLED
 }
 
 void NavigationRegion3D::_region_update_transform() {
@@ -413,13 +333,9 @@ void NavigationRegion3D::_region_update_transform() {
 	Transform3D new_global_transform = get_global_transform();
 	if (current_global_transform != new_global_transform) {
 		current_global_transform = new_global_transform;
-		NavigationServer3D::get_singleton()->region_set_transform(region, current_global_transform);
-#ifdef DEBUG_ENABLED
-		if (debug_instance.is_valid()) {
-			RS::get_singleton()->instance_set_transform(debug_instance, current_global_transform);
-		}
-#endif // DEBUG_ENABLED
+		
 	}
+	NavigationServer3D::get_singleton()->region_set_transform(region, current_global_transform);
 }
 
 NavigationRegion3D::NavigationRegion3D() {
@@ -432,11 +348,6 @@ NavigationRegion3D::NavigationRegion3D() {
 	NavigationServer3D::get_singleton()->region_set_navigation_layers(region, navigation_layers);
 	NavigationServer3D::get_singleton()->region_set_use_edge_connections(region, use_edge_connections);
 	NavigationServer3D::get_singleton()->region_set_enabled(region, enabled);
-
-#ifdef DEBUG_ENABLED
-	NavigationServer3D::get_singleton()->connect(SNAME("map_changed"), callable_mp(this, &NavigationRegion3D::_navigation_map_changed));
-	NavigationServer3D::get_singleton()->connect(SNAME("navigation_debug_changed"), callable_mp(this, &NavigationRegion3D::_navigation_debug_changed));
-#endif // DEBUG_ENABLED
 }
 
 NavigationRegion3D::~NavigationRegion3D() {
@@ -739,4 +650,3 @@ void NavigationRegion3D::_update_debug_edge_connections_mesh() {
 		RS::get_singleton()->instance_set_visible(debug_edge_connections_instance, false);
 	}
 }
-#endif // DEBUG_ENABLED

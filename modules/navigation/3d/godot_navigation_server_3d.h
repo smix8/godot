@@ -99,6 +99,12 @@ class GodotNavigationServer3D : public NavigationServer3D {
 	int pm_edge_free_count = 0;
 	int pm_obstacle_count = 0;
 
+	virtual void project_settings_changed() override;
+
+	bool debug_enabled = true;
+	bool debug_navigation_enabled = true;
+	bool debug_avoidance_enabled = true;
+
 public:
 	GodotNavigationServer3D();
 	virtual ~GodotNavigationServer3D();
@@ -108,6 +114,9 @@ public:
 	virtual TypedArray<RID> get_maps() const override;
 
 	virtual RID map_create() override;
+	// Used by GodotNavigationServer2D internal only.
+	RID map_create_2d();
+
 	COMMAND_2(map_set_active, RID, p_map, bool, p_active);
 	virtual bool map_is_active(RID p_map) const override;
 
@@ -285,6 +294,7 @@ public:
 
 	void flush_queries();
 	virtual void process(real_t p_delta_time) override;
+	virtual void physics_process(real_t p_delta_time) override;
 	virtual void init() override;
 	virtual void sync() override;
 	virtual void finish() override;
@@ -292,6 +302,16 @@ public:
 	virtual void query_path(const Ref<NavigationPathQueryParameters3D> &p_query_parameters, Ref<NavigationPathQueryResult3D> p_query_result, const Callable &p_callback = Callable()) override;
 
 	int get_process_info(ProcessInfo p_info) const override;
+
+	void set_debug_enabled(bool p_enabled) override;
+	bool get_debug_enabled() const override;
+
+	void debug_set_navigation_enabled(bool p_enabled) override;
+	void debug_set_avoidance_enabled(bool p_enabled) override;
+
+	void debug_map_set_enabled(RID p_map, bool p_enabled) override;
+	void debug_map_set_canvas(RID p_map, RID p_canvas) override;
+	void debug_map_set_scenario(RID p_map, RID p_scenario) override;
 
 private:
 	void internal_free_agent(RID p_object);

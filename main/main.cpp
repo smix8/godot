@@ -4437,7 +4437,7 @@ bool Main::iteration() {
 
 		uint64_t navigation_begin = OS::get_singleton()->get_ticks_usec();
 
-		NavigationServer3D::get_singleton()->process(physics_step * time_scale);
+		NavigationServer3D::get_singleton()->physics_process(physics_step * time_scale);
 
 		navigation_process_ticks = MAX(navigation_process_ticks, OS::get_singleton()->get_ticks_usec() - navigation_begin); // keep the largest one for reference
 		navigation_process_max = MAX(OS::get_singleton()->get_ticks_usec() - navigation_begin, navigation_process_max);
@@ -4472,6 +4472,8 @@ bool Main::iteration() {
 		exit = true;
 	}
 	message_queue->flush();
+
+	NavigationServer3D::get_singleton()->process(process_step * time_scale);
 
 	RenderingServer::get_singleton()->sync(); //sync if still drawing from previous frames.
 
@@ -4644,6 +4646,9 @@ void Main::cleanup(bool p_force) {
 
 	ScriptServer::finish_languages();
 
+	// Need to clear debug visuals before last RenderingServer flush.
+	finalize_navigation_server();
+
 	// Sync pending commands that may have been queued from a different thread during ScriptServer finalization
 	RenderingServer::get_singleton()->sync();
 
@@ -4677,7 +4682,6 @@ void Main::cleanup(bool p_force) {
 	finalize_theme_db();
 
 	// Before deinitializing server extensions, finalize servers which may be loaded as extensions.
-	finalize_navigation_server();
 	finalize_physics();
 
 	GDExtensionManager::get_singleton()->deinitialize_extensions(GDExtension::INITIALIZATION_LEVEL_SERVERS);

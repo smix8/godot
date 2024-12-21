@@ -40,6 +40,7 @@
 #include "editor/gui/editor_bottom_panel.h"
 #include "editor/plugins/script_editor_plugin.h"
 #include "editor/run_instances_dialog.h"
+#include "servers/navigation_server_3d.h"
 
 DebuggerEditorPlugin::DebuggerEditorPlugin(PopupMenu *p_debug_menu) {
 	EditorDebuggerServer::initialize();
@@ -167,6 +168,7 @@ void DebuggerEditorPlugin::_menu_option(int p_option) {
 			if (!initializing) {
 				EditorSettings::get_singleton()->set_project_metadata("debug_options", "run_debug_navigation", !ischecked);
 			}
+			NavigationServer3D::get_singleton()->debug_set_navigation_enabled(!ischecked);
 
 		} break;
 		case RUN_DEBUG_AVOIDANCE: {
@@ -175,6 +177,7 @@ void DebuggerEditorPlugin::_menu_option(int p_option) {
 			if (!initializing) {
 				EditorSettings::get_singleton()->set_project_metadata("debug_options", "run_debug_avoidance", !ischecked);
 			}
+			NavigationServer3D::get_singleton()->debug_set_avoidance_enabled(!ischecked);
 
 		} break;
 		case RUN_DEBUG_CANVAS_REDRAW: {

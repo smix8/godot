@@ -51,6 +51,8 @@ class NavigationServer3D : public Object {
 
 	static NavigationServer3D *singleton;
 
+	virtual void project_settings_changed() = 0;
+
 protected:
 	static void _bind_methods();
 
@@ -341,6 +343,7 @@ public:
 	/// so this must be called in the main thread.
 	/// Note: This function is not thread safe.
 	virtual void process(real_t delta_time) = 0;
+	virtual void physics_process(real_t delta_time) = 0;
 	virtual void init() = 0;
 	virtual void sync() = 0;
 	virtual void finish() = 0;
@@ -378,8 +381,15 @@ public:
 
 	virtual int get_process_info(ProcessInfo p_info) const = 0;
 
-	void set_debug_enabled(bool p_enabled);
-	bool get_debug_enabled() const;
+	virtual void set_debug_enabled(bool p_enabled) = 0;
+	virtual bool get_debug_enabled() const = 0;
+
+	virtual void debug_set_navigation_enabled(bool p_enabled) = 0;
+	virtual void debug_set_avoidance_enabled(bool p_enabled) = 0;
+
+	virtual void debug_map_set_enabled(RID p_map, bool p_enabled) = 0;
+	virtual void debug_map_set_canvas(RID p_map, RID p_canvas) = 0;
+	virtual void debug_map_set_scenario(RID p_map, RID p_scenario) = 0;
 
 protected:
 #ifndef DISABLE_DEPRECATED

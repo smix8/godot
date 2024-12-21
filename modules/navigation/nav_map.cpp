@@ -64,6 +64,21 @@
 	NavMapIterationRead iteration_read_lock(map_iteration);                       \
 	iteration_slot_rwlock.read_unlock();
 
+void NavMap::set_active(bool p_active) {
+	if (active == p_active) {
+		return;
+	}
+
+	active = p_active;
+#ifdef DEBUG_ENABLED
+	if (is_usage_2d()) {
+		get_debug_2d()->debug_make_dirty();
+	} else {
+		get_debug()->debug_make_dirty();
+	}
+#endif // DEBUG_ENABLED
+}
+
 void NavMap::set_up(Vector3 p_up) {
 	if (up == p_up) {
 		return;
@@ -517,6 +532,14 @@ void NavMap::_sync_iteration() {
 	iteration_slot_rwlock.write_unlock();
 
 	iteration_ready = false;
+
+#ifdef DEBUG_ENABLED
+		if (is_usage_2d()) {
+			get_debug_2d()->debug_make_dirty();
+		} else {
+			get_debug()->debug_make_dirty();
+		}
+#endif // DEBUG_ENABLED
 }
 
 void NavMap::sync() {
@@ -898,6 +921,26 @@ bool NavMap::get_use_async_iterations() const {
 	return use_async_iterations;
 }
 
+void NavMap::project_settings_changed() {
+#ifdef DEBUG_ENABLED
+	if (is_usage_2d()) {
+		get_debug_2d()->project_settings_changed();
+	} else {
+		get_debug()->project_settings_changed();
+	}
+#endif // DEBUG_ENABLED
+}
+
+void NavMap::sync_debug() {
+#ifdef DEBUG_ENABLED
+	if (is_usage_2d()) {
+		get_debug_2d()->sync();
+	} else {
+		get_debug()->sync();
+	}
+#endif // DEBUG_ENABLED
+}
+
 NavMap::NavMap() {
 	avoidance_use_multiple_threads = GLOBAL_GET("navigation/avoidance/thread_model/avoidance_use_multiple_threads");
 	avoidance_use_high_priority_threads = GLOBAL_GET("navigation/avoidance/thread_model/avoidance_use_high_priority_threads");
@@ -929,6 +972,12 @@ NavMap::NavMap() {
 	use_async_iterations = GLOBAL_GET("navigation/world/map_use_async_iterations");
 #else
 	use_async_iterations = false;
+
+	path_query_slots_semaphore.post(path_query_slots_max);
+
+#ifdef DEBUG_ENABLED
+	debug_2d = memnew(NavMapDebug2D(this));
+	debug = memnew(NavMapDebug3D(this));
 #endif
 }
 
@@ -937,4 +986,9 @@ NavMap::~NavMap() {
 		WorkerThreadPool::get_singleton()->wait_for_task_completion(iteration_build_thread_task_id);
 		iteration_build_thread_task_id = WorkerThreadPool::INVALID_TASK_ID;
 	}
+
+#ifdef DEBUG_ENABLED
+	memdelete(debug_2d);
+	memdelete(debug);
+#endif
 }

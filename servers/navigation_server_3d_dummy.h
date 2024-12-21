@@ -36,6 +36,8 @@
 class NavigationServer3DDummy : public NavigationServer3D {
 	GDCLASS(NavigationServer3DDummy, NavigationServer3D);
 
+	void project_settings_changed() override {}
+
 public:
 	TypedArray<RID> get_maps() const override { return TypedArray<RID>(); }
 	RID map_create() override { return RID(); }
@@ -197,14 +199,22 @@ public:
 	void free(RID p_object) override {}
 	void set_active(bool p_active) override {}
 	void process(real_t delta_time) override {}
+	void physics_process(real_t delta_time) override {}
 	void init() override {}
 	void sync() override {}
 	void finish() override {}
 
 	int get_process_info(ProcessInfo p_info) const override { return 0; }
 
-	void set_debug_enabled(bool p_enabled) {}
-	bool get_debug_enabled() const { return false; }
+	void set_debug_enabled(bool p_enabled) override {}
+	bool get_debug_enabled() const override { return false; }
+
+	void debug_set_navigation_enabled(bool p_enabled) override {}
+	void debug_set_avoidance_enabled(bool p_enabled) override {}
+
+	void debug_map_set_enabled(RID p_map, bool p_enabled) override {}
+	void debug_map_set_canvas(RID p_map, RID p_canvas) override {}
+	void debug_map_set_scenario(RID p_map, RID p_scenario) override {}
 };
 
 #endif // NAVIGATION_SERVER_3D_DUMMY_H

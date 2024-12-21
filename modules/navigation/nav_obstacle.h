@@ -36,10 +36,18 @@
 #include "core/object/class_db.h"
 #include "core/templates/self_list.h"
 
+#ifdef DEBUG_ENABLED
+#include "2d/nav_obstacle_debug_2d.h"
+#include "3d/nav_obstacle_debug_3d.h"
+#endif // DEBUG_ENABLED
+
 class NavAgent;
 class NavMap;
 
 class NavObstacle : public NavRid {
+	friend class NavObstacleDebug2D;
+	friend class NavObstacleDebug3D;
+
 	NavAgent *agent = nullptr;
 	NavMap *map = nullptr;
 	Vector3 velocity;
@@ -106,6 +114,18 @@ public:
 
 private:
 	void internal_update_agent();
+
+#ifdef DEBUG_ENABLED
+private:
+	NavObstacleDebug3D *debug = nullptr;
+	NavObstacleDebug2D *debug_2d = nullptr;
+
+	bool debug_enabled = true;
+
+public:
+	NavObstacleDebug3D *get_debug() { return debug; }
+	NavObstacleDebug2D *get_debug_2d() { return debug_2d; }
+#endif // DEBUG_ENABLED
 };
 
 #endif // NAV_OBSTACLE_H

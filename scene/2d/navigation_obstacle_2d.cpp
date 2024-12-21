@@ -90,17 +90,11 @@ void NavigationObstacle2D::_notification(int p_what) {
 			NavigationServer2D::get_singleton()->obstacle_set_avoidance_enabled(obstacle, avoidance_enabled);
 			_update_transform();
 			set_physics_process_internal(true);
-#ifdef DEBUG_ENABLED
-			RS::get_singleton()->canvas_item_set_parent(debug_canvas_item, get_world_2d()->get_canvas());
-#endif // DEBUG_ENABLED
 		} break;
 
 		case NOTIFICATION_EXIT_TREE: {
 			set_physics_process_internal(false);
 			_update_map(RID());
-#ifdef DEBUG_ENABLED
-			RS::get_singleton()->canvas_item_set_parent(debug_canvas_item, RID());
-#endif // DEBUG_ENABLED
 		} break;
 
 		case NOTIFICATION_SUSPENDED:
@@ -133,12 +127,6 @@ void NavigationObstacle2D::_notification(int p_what) {
 			NavigationServer2D::get_singleton()->obstacle_set_paused(obstacle, !can_process());
 		} break;
 
-		case NOTIFICATION_VISIBILITY_CHANGED: {
-#ifdef DEBUG_ENABLED
-			RS::get_singleton()->canvas_item_set_visible(debug_canvas_item, is_visible_in_tree());
-#endif // DEBUG_ENABLED
-		} break;
-
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 			if (is_inside_tree()) {
 				_update_transform();
@@ -152,26 +140,6 @@ void NavigationObstacle2D::_notification(int p_what) {
 					previous_velocity = velocity;
 				}
 			}
-		} break;
-
-		case NOTIFICATION_DRAW: {
-#ifdef DEBUG_ENABLED
-			if (is_inside_tree()) {
-				bool is_debug_enabled = false;
-				if (Engine::get_singleton()->is_editor_hint()) {
-					is_debug_enabled = true;
-				} else if (NavigationServer2D::get_singleton()->get_debug_enabled() && NavigationServer2D::get_singleton()->get_debug_avoidance_enabled()) {
-					is_debug_enabled = true;
-				}
-
-				if (is_debug_enabled) {
-					RS::get_singleton()->canvas_item_clear(debug_canvas_item);
-					RS::get_singleton()->canvas_item_set_transform(debug_canvas_item, Transform2D());
-					_update_fake_agent_radius_debug();
-					_update_static_obstacle_debug();
-				}
-			}
-#endif // DEBUG_ENABLED
 		} break;
 	}
 }
@@ -216,9 +184,6 @@ void NavigationObstacle2D::set_vertices(const Vector<Vector2> &p_vertices) {
 
 	const Transform2D node_transform = is_inside_tree() ? get_global_transform() : Transform2D();
 	NavigationServer2D::get_singleton()->obstacle_set_vertices(obstacle, node_transform.xform(vertices));
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationObstacle2D::set_navigation_map(RID p_navigation_map) {
@@ -248,9 +213,6 @@ void NavigationObstacle2D::set_radius(real_t p_radius) {
 
 	const Vector2 safe_scale = (is_inside_tree() ? get_global_scale() : get_scale()).abs().maxf(0.001);
 	NavigationServer2D::get_singleton()->obstacle_set_radius(obstacle, safe_scale[safe_scale.max_axis_index()] * radius);
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationObstacle2D::set_avoidance_layers(uint32_t p_layers) {
@@ -290,9 +252,6 @@ void NavigationObstacle2D::set_avoidance_enabled(bool p_enabled) {
 
 	avoidance_enabled = p_enabled;
 	NavigationServer2D::get_singleton()->obstacle_set_avoidance_enabled(obstacle, avoidance_enabled);
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
 }
 
 bool NavigationObstacle2D::get_avoidance_enabled() const {
@@ -346,9 +305,6 @@ void NavigationObstacle2D::_update_map(RID p_map) {
 
 void NavigationObstacle2D::_update_position(const Vector2 p_position) {
 	NavigationServer2D::get_singleton()->obstacle_set_position(obstacle, p_position);
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationObstacle2D::_update_transform() {
@@ -358,6 +314,7 @@ void NavigationObstacle2D::_update_transform() {
 	const float scaling_max_value = safe_scale[safe_scale.max_axis_index()];
 	NavigationServer2D::get_singleton()->obstacle_set_radius(obstacle, scaling_max_value * radius);
 	NavigationServer2D::get_singleton()->obstacle_set_vertices(obstacle, get_global_transform().translated(-get_global_position()).xform(vertices));
+
 #ifdef DEBUG_ENABLED
 	queue_redraw();
 #endif // DEBUG_ENABLED
@@ -435,4 +392,3 @@ void NavigationObstacle2D::_update_static_obstacle_debug() {
 
 	rs->canvas_item_add_mesh(debug_canvas_item, debug_mesh_rid, get_global_transform());
 }
-#endif // DEBUG_ENABLED

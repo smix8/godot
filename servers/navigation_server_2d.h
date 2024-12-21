@@ -329,6 +329,8 @@ protected:
 #endif
 
 public:
+	virtual void debug_map_set_canvas(RID p_map, RID p_canvas) = 0;
+
 #ifdef DEBUG_ENABLED
 	void set_debug_navigation_enabled(bool p_enabled);
 	bool get_debug_navigation_enabled() const;

@@ -180,6 +180,8 @@ public:
 
 	void set_debug_enabled(bool p_enabled) {}
 	bool get_debug_enabled() const { return false; }
+
+	void debug_map_set_canvas(RID p_map, RID p_canvas) {}
 };
 
 #endif // NAVIGATION_SERVER_2D_DUMMY_H

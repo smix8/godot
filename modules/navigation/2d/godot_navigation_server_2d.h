@@ -260,6 +260,8 @@ public:
 	virtual void source_geometry_parser_set_callback(RID p_parser, const Callable &p_callback) override;
 
 	virtual Vector<Vector2> simplify_path(const Vector<Vector2> &p_path, real_t p_epsilon) override;
+
+	virtual void debug_map_set_canvas(RID p_map, RID p_canvas) override;
 };
 
 #endif // GODOT_NAVIGATION_SERVER_2D_H

@@ -50,21 +50,6 @@ class NavigationRegion2D : public Node2D {
 
 	void _navigation_polygon_changed();
 
-#ifdef DEBUG_ENABLED
-private:
-	RID debug_mesh_rid;
-	RID debug_instance_rid;
-
-	bool debug_mesh_dirty = true;
-
-	void _set_debug_visibile(bool p_visible);
-	void _update_debug_mesh();
-	void _update_debug_edge_connections_mesh();
-	void _update_debug_baking_rect();
-	void _navigation_map_changed(RID p_map);
-	void _navigation_debug_changed();
-#endif // DEBUG_ENABLED
-
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();

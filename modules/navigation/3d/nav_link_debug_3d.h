@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  navigation_region_3d.h                                                */
+/*  nav_link_debug_3d.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,82 +28,47 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef NAVIGATION_REGION_3D_H
-#define NAVIGATION_REGION_3D_H
+#ifndef NAV_LINK_DEBUG_3D_H
+#define NAV_LINK_DEBUG_3D_H
 
-#include "scene/3d/node_3d.h"
-#include "scene/resources/navigation_mesh.h"
+#include "core/object/class_db.h"
+#include "core/templates/self_list.h"
 
-class NavigationRegion3D : public Node3D {
-	GDCLASS(NavigationRegion3D, Node3D);
+class NavLink;
 
-	bool enabled = true;
-	bool use_edge_connections = true;
+class NavLinkDebug3D {
+	NavLink *link = nullptr;
 
-	RID region;
-	RID map_override;
-	uint32_t navigation_layers = 1;
-	real_t enter_cost = 0.0;
-	real_t travel_cost = 1.0;
-	Ref<NavigationMesh> navigation_mesh;
+	RID debug_mesh_rid;
+	RID debug_instance_rid;
 
-	Transform3D current_global_transform;
+	bool debug_enabled = true;
+	bool debug_transform_dirty = false;
+	bool debug_mesh_dirty = false;
+	bool debug_material_dirty = false;
 
-	void _navigation_mesh_changed();
-
-protected:
-	void _notification(int p_what);
-	static void _bind_methods();
-
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-#endif // DISABLE_DEPRECATED
+	SelfList<NavLinkDebug3D> sync_dirty_request_list_element;
 
 public:
-	RID get_rid() const;
+	void debug_set_enabled(bool p_enabled);
+	void debug_update();
+	void debug_update_scenario();
+	void debug_update_transform();
+	void debug_update_mesh();
+	void debug_update_material();
+	void debug_make_dirty() {
+		debug_transform_dirty = true;
+		debug_mesh_dirty = true;
+		debug_material_dirty = true;
+	};
+	void debug_free();
 
-	void set_enabled(bool p_enabled);
-	bool is_enabled() const;
+	void sync();
+	void request_sync();
+	void cancel_sync_request();
 
-	void set_navigation_map(RID p_navigation_map);
-	RID get_navigation_map() const;
-
-	void set_use_edge_connections(bool p_enabled);
-	bool get_use_edge_connections() const;
-
-	void set_navigation_layers(uint32_t p_navigation_layers);
-	uint32_t get_navigation_layers() const;
-
-	void set_navigation_layer_value(int p_layer_number, bool p_value);
-	bool get_navigation_layer_value(int p_layer_number) const;
-
-	RID get_region_rid() const;
-
-	void set_enter_cost(real_t p_enter_cost);
-	real_t get_enter_cost() const;
-
-	void set_travel_cost(real_t p_travel_cost);
-	real_t get_travel_cost() const;
-
-	void set_navigation_mesh(const Ref<NavigationMesh> &p_navigation_mesh);
-	Ref<NavigationMesh> get_navigation_mesh() const;
-
-	/// Bakes the navigation mesh; once done, automatically
-	/// sets the new navigation mesh and emits a signal
-	void bake_navigation_mesh(bool p_on_thread);
-	void _bake_finished(Ref<NavigationMesh> p_navigation_mesh);
-	bool is_baking() const;
-
-	PackedStringArray get_configuration_warnings() const override;
-
-	NavigationRegion3D();
-	~NavigationRegion3D();
-
-private:
-	void _region_enter_navigation_map();
-	void _region_exit_navigation_map();
-	void _region_update_transform();
+	NavLinkDebug3D(NavLink *p_link);
+	~NavLinkDebug3D();
 };
 
-#endif // NAVIGATION_REGION_3D_H
+#endif // NAV_LINK_DEBUG_3D_H

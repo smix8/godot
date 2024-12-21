@@ -123,11 +123,6 @@ void NavigationLink2D::_notification(int p_what) {
 		case NOTIFICATION_EXIT_TREE: {
 			_link_exit_navigation_map();
 		} break;
-		case NOTIFICATION_DRAW: {
-#ifdef DEBUG_ENABLED
-			_update_debug_mesh();
-#endif // DEBUG_ENABLED
-		} break;
 	}
 }
 
@@ -165,10 +160,6 @@ void NavigationLink2D::set_enabled(bool p_enabled) {
 	enabled = p_enabled;
 
 	NavigationServer2D::get_singleton()->link_set_enabled(link, enabled);
-
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationLink2D::set_navigation_map(RID p_navigation_map) {
@@ -246,10 +237,6 @@ void NavigationLink2D::set_start_position(Vector2 p_position) {
 	NavigationServer2D::get_singleton()->link_set_start_position(link, current_global_transform.xform(start_position));
 
 	update_configuration_warnings();
-
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationLink2D::set_end_position(Vector2 p_position) {
@@ -266,10 +253,6 @@ void NavigationLink2D::set_end_position(Vector2 p_position) {
 	NavigationServer2D::get_singleton()->link_set_end_position(link, current_global_transform.xform(end_position));
 
 	update_configuration_warnings();
-
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationLink2D::set_global_start_position(Vector2 p_position) {
@@ -352,8 +335,6 @@ void NavigationLink2D::_link_enter_navigation_map() {
 	NavigationServer2D::get_singleton()->link_set_start_position(link, current_global_transform.xform(start_position));
 	NavigationServer2D::get_singleton()->link_set_end_position(link, current_global_transform.xform(end_position));
 	NavigationServer2D::get_singleton()->link_set_enabled(link, enabled);
-
-	queue_redraw();
 }
 
 void NavigationLink2D::_link_exit_navigation_map() {
@@ -370,34 +351,8 @@ void NavigationLink2D::_link_update_transform() {
 		current_global_transform = new_global_transform;
 		NavigationServer2D::get_singleton()->link_set_start_position(link, current_global_transform.xform(start_position));
 		NavigationServer2D::get_singleton()->link_set_end_position(link, current_global_transform.xform(end_position));
-		queue_redraw();
 	}
 }
-
-#ifdef DEBUG_ENABLED
-void NavigationLink2D::_update_debug_mesh() {
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	if (!Engine::get_singleton()->is_editor_hint() && !NavigationServer2D::get_singleton()->get_debug_enabled()) {
-		return;
-	}
-
-	Color color;
-	if (enabled) {
-		color = NavigationServer2D::get_singleton()->get_debug_navigation_link_connection_color();
-	} else {
-		color = NavigationServer2D::get_singleton()->get_debug_navigation_link_connection_disabled_color();
-	}
-
-	real_t radius = NavigationServer2D::get_singleton()->map_get_link_connection_radius(get_world_2d()->get_navigation_map());
-
-	draw_line(get_start_position(), get_end_position(), color);
-	draw_arc(get_start_position(), radius, 0, Math_TAU, 10, color);
-	draw_arc(get_end_position(), radius, 0, Math_TAU, 10, color);
-}
-#endif // DEBUG_ENABLED
 
 NavigationLink2D::NavigationLink2D() {
 	link = NavigationServer2D::get_singleton()->link_create();

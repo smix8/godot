@@ -54,6 +54,7 @@
 #include "scene/resources/text_line.h"
 #include "scene/resources/world_2d.h"
 #include "servers/audio_server.h"
+#include "servers/navigation_server_3d.h"
 #include "servers/rendering/rendering_server_globals.h"
 
 void ViewportTexture::setup_local_to_scene() {
@@ -4461,6 +4462,9 @@ void Viewport::set_world_3d(const Ref<World3D> &p_world_3d) {
 
 	if (is_inside_tree()) {
 		RenderingServer::get_singleton()->viewport_set_scenario(viewport, find_world_3d()->get_scenario());
+		if (find_world_3d()->has_navigation_map()) {
+			NavigationServer3D::get_singleton()->debug_map_set_scenario(find_world_3d()->get_navigation_map(), find_world_3d()->get_scenario());
+		}
 	}
 
 	_update_audio_listener_3d();
@@ -4482,6 +4486,9 @@ void Viewport::_own_world_3d_changed() {
 
 	if (is_inside_tree()) {
 		RenderingServer::get_singleton()->viewport_set_scenario(viewport, find_world_3d()->get_scenario());
+		if (find_world_3d()->has_navigation_map()) {
+			NavigationServer3D::get_singleton()->debug_map_set_scenario(find_world_3d()->get_navigation_map(), find_world_3d()->get_scenario());
+		}
 	}
 
 	_update_audio_listener_3d();

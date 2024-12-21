@@ -30,6 +30,8 @@
 
 #include "godot_navigation_server_2d.h"
 
+#include "../3d/godot_navigation_server_3d.h"
+
 #ifdef CLIPPER2_ENABLED
 #include "nav_mesh_generator_2d.h"
 #endif // CLIPPER2_ENABLED
@@ -245,7 +247,9 @@ RID FORWARD_1_C(region_get_map, RID, p_region, rid_to_rid);
 
 RID FORWARD_1_C(agent_get_map, RID, p_agent, rid_to_rid);
 
-RID FORWARD_0(map_create);
+RID GodotNavigationServer2D::map_create() {
+	return Object::cast_to<GodotNavigationServer3D>(GodotNavigationServer3D::get_singleton())->map_create_2d();
+}
 
 void FORWARD_2(map_set_active, RID, p_map, bool, p_active, rid_to_rid, bool_to_bool);
 
@@ -519,4 +523,8 @@ void GodotNavigationServer2D::source_geometry_parser_set_callback(RID p_parser, 
 		navmesh_generator_2d->source_geometry_parser_set_callback(p_parser, p_callback);
 	}
 #endif // CLIPPER2_ENABLED
+}
+
+void GodotNavigationServer2D::debug_map_set_canvas(RID p_map, RID p_canvas) {
+	NavigationServer3D::get_singleton()->debug_map_set_canvas(p_map, p_canvas);
 }

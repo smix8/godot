@@ -70,6 +70,8 @@ public:
 	RID get_navigation_map() const;
 	RID get_scenario() const;
 
+	bool has_navigation_map() const;
+
 	void set_environment(const Ref<Environment> &p_environment);
 	Ref<Environment> get_environment() const;
 

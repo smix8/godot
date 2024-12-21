@@ -54,6 +54,10 @@ void NavRegion::set_map(NavMap *p_map) {
 		map->add_region(this);
 		request_sync();
 	}
+#ifdef DEBUG_ENABLED
+	debug_2d->debug_update_canvas();
+	debug->debug_update_scenario();
+#endif // DEBUG_ENABLED
 }
 
 void NavRegion::set_enabled(bool p_enabled) {
@@ -66,15 +70,22 @@ void NavRegion::set_enabled(bool p_enabled) {
 	polygons_dirty = true;
 
 	request_sync();
+
+	region_dirty = true;
+#ifdef DEBUG_ENABLED
+	debug->debug_update_material();
+#endif // DEBUG_ENABLED
 }
 
 void NavRegion::set_use_edge_connections(bool p_enabled) {
-	if (use_edge_connections != p_enabled) {
-		use_edge_connections = p_enabled;
-		polygons_dirty = true;
+	if (use_edge_connections == p_enabled) {
+		return;
 	}
 
 	request_sync();
+
+	use_edge_connections = p_enabled;
+	region_dirty = true;
 }
 
 void NavRegion::set_transform(Transform3D p_transform) {
@@ -82,7 +93,7 @@ void NavRegion::set_transform(Transform3D p_transform) {
 		return;
 	}
 	transform = p_transform;
-	polygons_dirty = true;
+	region_dirty = true;
 
 	request_sync();
 
@@ -90,6 +101,8 @@ void NavRegion::set_transform(Transform3D p_transform) {
 	if (map && Math::rad_to_deg(map->get_up().angle_to(transform.basis.get_column(1))) >= 90.0f) {
 		ERR_PRINT_ONCE("Attempted to update a navigation region transform rotated 90 degrees or more away from the current navigation map UP orientation.");
 	}
+
+	debug->debug_update_transform();
 #endif // DEBUG_ENABLED
 }
 
@@ -112,6 +125,8 @@ void NavRegion::set_navigation_mesh(Ref<NavigationMesh> p_navigation_mesh) {
 	if (p_navigation_mesh.is_valid()) {
 		p_navigation_mesh->get_data(pending_navmesh_vertices, pending_navmesh_polygons);
 	}
+
+	navmesh_data_dirty = true;
 
 	polygons_dirty = true;
 
@@ -144,9 +159,14 @@ Vector3 NavRegion::get_random_point(uint32_t p_navigation_layers, bool p_uniform
 bool NavRegion::sync() {
 	RWLockWrite write_lock(region_rwlock);
 
-	bool something_changed = polygons_dirty /* || something_dirty? */;
+	if(region_dirty) {
+		polygons_dirty = true;
+	}
+	bool something_changed = polygons_dirty || region_dirty;
 
 	update_polygons();
+
+	region_dirty = false;
 
 	return something_changed;
 }
@@ -155,27 +175,38 @@ void NavRegion::update_polygons() {
 	if (!polygons_dirty) {
 		return;
 	}
+
 	navmesh_polygons.clear();
 	surface_area = 0.0;
 	bounds = AABB();
 	polygons_dirty = false;
 
+	RWLockWrite write_lock(navmesh_rwlock);
+
+	if (navmesh_data_dirty) {
+		navmesh_data_dirty = false;
+
+		navmesh_vertices.clear();
+		navmesh_polygons.clear();
+
+		SWAP(navmesh_vertices, pending_navmesh_vertices);
+		SWAP(navmesh_polygons, pending_navmesh_polygons);
+	}
+
+#ifdef DEBUG_ENABLED
+	debug->debug_update_mesh();
+#endif
+
 	if (map == nullptr) {
 		return;
 	}
 
-	RWLockRead read_lock(navmesh_rwlock);
-
-	if (pending_navmesh_vertices.is_empty() || pending_navmesh_polygons.is_empty()) {
-		return;
-	}
-
-	int len = pending_navmesh_vertices.size();
+	int len = navmesh_vertices.size();
 	if (len == 0) {
 		return;
 	}
 
-	const Vector3 *vertices_r = pending_navmesh_vertices.ptr();
+	const Vector3 *vertices_r = navmesh_vertices.ptr();
 
 	navmesh_polygons.resize(pending_navmesh_polygons.size());
 
@@ -188,7 +219,7 @@ void NavRegion::update_polygons() {
 	for (gd::Polygon &polygon : navmesh_polygons) {
 		polygon.surface_area = 0.0;
 
-		Vector<int> navigation_mesh_polygon = pending_navmesh_polygons[navigation_mesh_polygon_index];
+		Vector<int> navigation_mesh_polygon = navmesh_polygons[navigation_mesh_polygon_index];
 		navigation_mesh_polygon_index += 1;
 
 		int navigation_mesh_polygon_size = navigation_mesh_polygon.size();
@@ -282,8 +313,17 @@ void NavRegion::cancel_sync_request() {
 NavRegion::NavRegion() :
 		sync_dirty_request_list_element(this) {
 	type = NavigationUtilities::PathSegmentType::PATH_SEGMENT_TYPE_REGION;
+
+#ifdef DEBUG_ENABLED
+	debug = memnew(NavRegionDebug3D(this));
+	debug_2d = memnew(NavRegionDebug2D(this));
+#endif
 }
 
 NavRegion::~NavRegion() {
 	cancel_sync_request();
+#ifdef DEBUG_ENABLED
+	memdelete(debug);
+	memdelete(debug_2d);
+#endif
 }

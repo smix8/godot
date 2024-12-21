@@ -207,6 +207,10 @@ void NavigationServer3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_debug_enabled", "enabled"), &NavigationServer3D::set_debug_enabled);
 	ClassDB::bind_method(D_METHOD("get_debug_enabled"), &NavigationServer3D::get_debug_enabled);
 
+	ClassDB::bind_method(D_METHOD("debug_map_set_enabled", "map", "enabled"), &NavigationServer3D::debug_map_set_enabled);
+	ClassDB::bind_method(D_METHOD("debug_map_set_canvas", "map", "canvas"), &NavigationServer3D::debug_map_set_canvas);
+	ClassDB::bind_method(D_METHOD("debug_map_set_scenario", "map", "scenario"), &NavigationServer3D::debug_map_set_scenario);
+
 	ADD_SIGNAL(MethodInfo("map_changed", PropertyInfo(Variant::RID, "map")));
 
 	ADD_SIGNAL(MethodInfo("navigation_debug_changed"));
@@ -293,15 +297,25 @@ NavigationServer3D::NavigationServer3D() {
 	if (Engine::get_singleton()->is_editor_hint()) {
 		// enable NavigationServer3D when in Editor or else navigation mesh edge connections are invisible
 		// on runtime tests SceneTree has "Visible Navigation" set and main iteration takes care of this
-		set_debug_enabled(true);
-		set_debug_navigation_enabled(true);
-		set_debug_avoidance_enabled(true);
+		//set_debug_enabled(true);
+		//set_debug_navigation_enabled(true);
+		//set_debug_avoidance_enabled(true);
 	}
+
+	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &NavigationServer3D::project_settings_changed));
+	project_settings_changed();
 #endif // DEBUG_ENABLED
 }
 
 NavigationServer3D::~NavigationServer3D() {
 	singleton = nullptr;
+
+#ifdef DEBUG_ENABLED
+	ProjectSettings::get_singleton()->disconnect("settings_changed", callable_mp(this, &NavigationServer3D::project_settings_changed));
+#endif // DEBUG_ENABLED
+}
+
+void NavigationServer3D::project_settings_changed() {
 }
 
 void NavigationServer3D::set_debug_enabled(bool p_enabled) {

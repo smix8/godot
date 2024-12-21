@@ -35,6 +35,11 @@
 #include "nav_base.h"
 #include "nav_utils.h"
 
+#ifdef DEBUG_ENABLED
+#include "2d/nav_link_debug_2d.h"
+#include "3d/nav_link_debug_3d.h"
+#endif // DEBUG_ENABLED
+
 struct NavLinkIteration : NavBaseIteration {
 	bool bidirectional = true;
 	Vector3 start_position;
@@ -49,6 +54,9 @@ struct NavLinkIteration : NavBaseIteration {
 #include "core/templates/self_list.h"
 
 class NavLink : public NavBase {
+	friend class NavLinkDebug2D;
+	friend class NavLinkDebug3D;
+
 	NavMap *map = nullptr;
 	bool bidirectional = true;
 	Vector3 start_position;
@@ -91,7 +99,20 @@ public:
 	void request_sync();
 	void cancel_sync_request();
 
+
 	void get_iteration_update(NavLinkIteration &r_iteration);
+
+#ifdef DEBUG_ENABLED
+private:
+	NavLinkDebug3D *debug = nullptr;
+	NavLinkDebug2D *debug_2d = nullptr;
+
+	bool debug_enabled = true;
+
+public:
+	NavLinkDebug3D *get_debug() { return debug; }
+	NavLinkDebug2D *get_debug_2d() { return debug_2d; }
+#endif // DEBUG_ENABLED
 };
 
 #endif // NAV_LINK_H

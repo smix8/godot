@@ -96,9 +96,6 @@ void NavigationObstacle3D::_notification(int p_what) {
 			NavigationServer3D::get_singleton()->obstacle_set_avoidance_enabled(obstacle, avoidance_enabled);
 			_update_transform();
 			set_physics_process_internal(true);
-#ifdef DEBUG_ENABLED
-			_update_debug();
-#endif // DEBUG_ENABLED
 		} break;
 
 #ifdef TOOLS_ENABLED
@@ -110,9 +107,6 @@ void NavigationObstacle3D::_notification(int p_what) {
 		case NOTIFICATION_EXIT_TREE: {
 			set_physics_process_internal(false);
 			_update_map(RID());
-#ifdef DEBUG_ENABLED
-			_update_debug();
-#endif // DEBUG_ENABLED
 		} break;
 
 		case NOTIFICATION_SUSPENDED:
@@ -145,12 +139,6 @@ void NavigationObstacle3D::_notification(int p_what) {
 			NavigationServer3D::get_singleton()->obstacle_set_paused(obstacle, !can_process());
 		} break;
 
-#ifdef DEBUG_ENABLED
-		case NOTIFICATION_VISIBILITY_CHANGED: {
-			_update_debug();
-		} break;
-#endif // DEBUG_ENABLED
-
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 			if (is_inside_tree()) {
 				_update_transform();
@@ -163,26 +151,6 @@ void NavigationObstacle3D::_notification(int p_what) {
 					}
 					previous_velocity = velocity;
 				}
-#ifdef DEBUG_ENABLED
-				if (fake_agent_radius_debug_instance_rid.is_valid() && radius > 0.0) {
-					// Prevent non-positive scaling.
-					const Vector3 safe_scale = get_global_basis().get_scale().abs().maxf(0.001);
-					// Agent radius is a scalar value and does not support non-uniform scaling, choose the largest axis.
-					const float scaling_max_value = safe_scale[safe_scale.max_axis_index()];
-					const Vector3 uniform_max_scale = Vector3(scaling_max_value, scaling_max_value, scaling_max_value);
-					const Transform3D debug_transform = Transform3D(Basis().scaled(uniform_max_scale), get_global_position());
-
-					RS::get_singleton()->instance_set_transform(fake_agent_radius_debug_instance_rid, debug_transform);
-				}
-				if (static_obstacle_debug_instance_rid.is_valid() && get_vertices().size() > 0) {
-					// Prevent non-positive scaling.
-					const Vector3 safe_scale = get_global_basis().get_scale().abs().maxf(0.001);
-					// Obstacles are projected to the xz-plane, so only rotation around the y-axis can be taken into account.
-					const Transform3D debug_transform = Transform3D(Basis().scaled(safe_scale).rotated(Vector3(0.0, 1.0, 0.0), get_global_rotation().y), get_global_position());
-
-					RS::get_singleton()->instance_set_transform(static_obstacle_debug_instance_rid, debug_transform);
-				}
-#endif // DEBUG_ENABLED
 			}
 		} break;
 	}
@@ -199,28 +167,6 @@ NavigationObstacle3D::NavigationObstacle3D() {
 	ns3d->obstacle_set_avoidance_layers(obstacle, avoidance_layers);
 	ns3d->obstacle_set_use_3d_avoidance(obstacle, use_3d_avoidance);
 	ns3d->obstacle_set_avoidance_enabled(obstacle, avoidance_enabled);
-
-#ifdef DEBUG_ENABLED
-	RenderingServer *rs = RenderingServer::get_singleton();
-
-	fake_agent_radius_debug_mesh_rid = rs->mesh_create();
-	static_obstacle_debug_mesh_rid = rs->mesh_create();
-
-	fake_agent_radius_debug_instance_rid = rs->instance_create();
-	static_obstacle_debug_instance_rid = rs->instance_create();
-
-	rs->instance_set_base(fake_agent_radius_debug_instance_rid, fake_agent_radius_debug_mesh_rid);
-	rs->instance_set_base(static_obstacle_debug_instance_rid, static_obstacle_debug_mesh_rid);
-
-	ns3d->connect("avoidance_debug_changed", callable_mp(this, &NavigationObstacle3D::_update_fake_agent_radius_debug));
-	ns3d->connect("avoidance_debug_changed", callable_mp(this, &NavigationObstacle3D::_update_static_obstacle_debug));
-	_update_fake_agent_radius_debug();
-	_update_static_obstacle_debug();
-#endif // DEBUG_ENABLED
-
-#ifdef TOOLS_ENABLED
-	set_notify_transform(true);
-#endif // TOOLS_ENABLED
 }
 
 NavigationObstacle3D::~NavigationObstacle3D() {
@@ -229,30 +175,6 @@ NavigationObstacle3D::~NavigationObstacle3D() {
 
 	ns3d->free(obstacle);
 	obstacle = RID();
-
-#ifdef DEBUG_ENABLED
-	ns3d->disconnect("avoidance_debug_changed", callable_mp(this, &NavigationObstacle3D::_update_fake_agent_radius_debug));
-	ns3d->disconnect("avoidance_debug_changed", callable_mp(this, &NavigationObstacle3D::_update_static_obstacle_debug));
-
-	RenderingServer *rs = RenderingServer::get_singleton();
-	ERR_FAIL_NULL(rs);
-	if (fake_agent_radius_debug_instance_rid.is_valid()) {
-		rs->free(fake_agent_radius_debug_instance_rid);
-		fake_agent_radius_debug_instance_rid = RID();
-	}
-	if (fake_agent_radius_debug_mesh_rid.is_valid()) {
-		rs->free(fake_agent_radius_debug_mesh_rid);
-		fake_agent_radius_debug_mesh_rid = RID();
-	}
-	if (static_obstacle_debug_instance_rid.is_valid()) {
-		rs->free(static_obstacle_debug_instance_rid);
-		static_obstacle_debug_instance_rid = RID();
-	}
-	if (static_obstacle_debug_mesh_rid.is_valid()) {
-		rs->free(static_obstacle_debug_mesh_rid);
-		static_obstacle_debug_mesh_rid = RID();
-	}
-#endif // DEBUG_ENABLED
 }
 
 void NavigationObstacle3D::set_vertices(const Vector<Vector3> &p_vertices) {
@@ -276,10 +198,6 @@ void NavigationObstacle3D::set_vertices(const Vector<Vector3> &p_vertices) {
 	const Vector3 safe_scale = basis.get_scale().abs().maxf(0.001);
 	const Transform3D safe_transform = Transform3D(Basis().scaled(safe_scale).rotated(Vector3(0.0, 1.0, 0.0), rotation_y), Vector3());
 	NavigationServer3D::get_singleton()->obstacle_set_vertices(obstacle, safe_transform.xform(vertices));
-#ifdef DEBUG_ENABLED
-	_update_static_obstacle_debug();
-	update_gizmos();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationObstacle3D::set_navigation_map(RID p_navigation_map) {
@@ -310,11 +228,6 @@ void NavigationObstacle3D::set_radius(real_t p_radius) {
 	// Prevent non-positive or non-uniform scaling of dynamic obstacle radius.
 	const Vector3 safe_scale = (is_inside_tree() ? get_global_basis() : get_basis()).get_scale().abs().maxf(0.001);
 	NavigationServer3D::get_singleton()->obstacle_set_radius(obstacle, safe_scale[safe_scale.max_axis_index()] * radius);
-
-#ifdef DEBUG_ENABLED
-	_update_fake_agent_radius_debug();
-	update_gizmos();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationObstacle3D::set_height(real_t p_height) {
@@ -324,13 +237,9 @@ void NavigationObstacle3D::set_height(real_t p_height) {
 	}
 
 	height = p_height;
+
 	const float scale_factor = MAX(Math::abs((is_inside_tree() ? get_global_basis() : get_basis()).get_scale().y), 0.001);
 	NavigationServer3D::get_singleton()->obstacle_set_height(obstacle, scale_factor * height);
-
-#ifdef DEBUG_ENABLED
-	_update_static_obstacle_debug();
-	update_gizmos();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationObstacle3D::set_avoidance_layers(uint32_t p_layers) {

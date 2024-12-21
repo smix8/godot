@@ -60,8 +60,13 @@ RID World2D::get_navigation_map() const {
 		NavigationServer2D::get_singleton()->map_set_use_edge_connections(navigation_map, GLOBAL_GET("navigation/2d/use_edge_connections"));
 		NavigationServer2D::get_singleton()->map_set_edge_connection_margin(navigation_map, GLOBAL_GET("navigation/2d/default_edge_connection_margin"));
 		NavigationServer2D::get_singleton()->map_set_link_connection_radius(navigation_map, GLOBAL_GET("navigation/2d/default_link_connection_radius"));
+		NavigationServer2D::get_singleton()->debug_map_set_canvas(navigation_map, get_canvas());
 	}
 	return navigation_map;
+}
+
+bool World2D::has_navigation_map() const {
+	return !navigation_map.is_null();
 }
 
 PhysicsDirectSpaceState2D *World2D::get_direct_space_state() {

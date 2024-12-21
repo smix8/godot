@@ -37,9 +37,17 @@
 #include "core/os/rw_lock.h"
 #include "scene/resources/navigation_mesh.h"
 
+#ifdef DEBUG_ENABLED
+#include "2d/nav_region_debug_2d.h"
+#include "3d/nav_region_debug_3d.h"
+#endif // DEBUG_ENABLED
+
 struct NavRegionIteration;
 
 class NavRegion : public NavBase {
+	friend class NavRegionDebug2D;
+	friend class NavRegionDebug3D;
+
 	RWLock region_rwlock;
 
 	NavMap *map = nullptr;
@@ -48,6 +56,7 @@ class NavRegion : public NavBase {
 
 	bool use_edge_connections = true;
 
+	bool region_dirty = true;
 	bool polygons_dirty = true;
 
 	LocalVector<gd::Polygon> navmesh_polygons;
@@ -56,10 +65,14 @@ class NavRegion : public NavBase {
 	AABB bounds;
 
 	RWLock navmesh_rwlock;
+	bool navmesh_data_dirty = false;
 	Vector<Vector3> pending_navmesh_vertices;
 	Vector<Vector<int>> pending_navmesh_polygons;
 
 	SelfList<NavRegion> sync_dirty_request_list_element;
+
+	Vector<Vector3> navmesh_vertices;
+	Vector<Vector<int>> navmesh_polygons;
 
 public:
 	NavRegion();
@@ -108,6 +121,18 @@ public:
 
 private:
 	void update_polygons();
+
+#ifdef DEBUG_ENABLED
+private:
+	NavRegionDebug3D *debug = nullptr;
+	NavRegionDebug2D *debug_2d = nullptr;
+
+	bool debug_enabled = true;
+
+public:
+	NavRegionDebug3D *get_debug() { return debug; }
+	NavRegionDebug2D *get_debug_2d() { return debug_2d; }
+#endif // DEBUG_ENABLED
 };
 
 #endif // NAV_REGION_H

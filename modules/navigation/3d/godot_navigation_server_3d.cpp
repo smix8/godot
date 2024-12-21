@@ -88,6 +88,12 @@ GodotNavigationServer3D::~GodotNavigationServer3D() {
 	flush_queries();
 }
 
+void GodotNavigationServer3D::project_settings_changed() {
+	for (NavMap *map : active_maps) {
+		map->project_settings_changed();
+	}
+}
+
 void GodotNavigationServer3D::add_command(SetCommand *command) {
 	MutexLock lock(commands_mutex);
 
@@ -115,9 +121,21 @@ RID GodotNavigationServer3D::map_create() {
 	return rid;
 }
 
+RID GodotNavigationServer3D::map_create_2d() {
+	MutexLock lock(operations_mutex);
+
+	RID rid = map_owner.make_rid();
+	NavMap *map = map_owner.get_or_null(rid);
+	map->set_self(rid);
+	map->set_usage_2d(true);
+	return rid;
+}
+
 COMMAND_2(map_set_active, RID, p_map, bool, p_active) {
 	NavMap *map = map_owner.get_or_null(p_map);
 	ERR_FAIL_NULL(map);
+
+	map->set_active(p_active);
 
 	if (p_active) {
 		if (!map_is_active(p_map)) {
@@ -540,6 +558,7 @@ void GodotNavigationServer3D::region_bake_navigation_mesh(Ref<NavigationMesh> p_
 int GodotNavigationServer3D::region_get_connections_count(RID p_region) const {
 	NavRegion *region = region_owner.get_or_null(p_region);
 	ERR_FAIL_NULL_V(region, 0);
+
 	NavMap *map = region->get_map();
 	if (map) {
 		return map->get_region_connections_count(region);
@@ -550,6 +569,7 @@ int GodotNavigationServer3D::region_get_connections_count(RID p_region) const {
 Vector3 GodotNavigationServer3D::region_get_connection_pathway_start(RID p_region, int p_connection_id) const {
 	NavRegion *region = region_owner.get_or_null(p_region);
 	ERR_FAIL_NULL_V(region, Vector3());
+
 	NavMap *map = region->get_map();
 	if (map) {
 		return map->get_region_connection_pathway_start(region, p_connection_id);
@@ -560,6 +580,7 @@ Vector3 GodotNavigationServer3D::region_get_connection_pathway_start(RID p_regio
 Vector3 GodotNavigationServer3D::region_get_connection_pathway_end(RID p_region, int p_connection_id) const {
 	NavRegion *region = region_owner.get_or_null(p_region);
 	ERR_FAIL_NULL_V(region, Vector3());
+
 	NavMap *map = region->get_map();
 	if (map) {
 		return map->get_region_connection_pathway_end(region, p_connection_id);
@@ -1344,7 +1365,7 @@ void GodotNavigationServer3D::sync() {
 #endif // _3D_DISABLED
 }
 
-void GodotNavigationServer3D::process(real_t p_delta_time) {
+void GodotNavigationServer3D::physics_process(real_t p_delta_time) {
 	flush_queries();
 
 	if (!active) {
@@ -1398,6 +1419,16 @@ void GodotNavigationServer3D::process(real_t p_delta_time) {
 	pm_obstacle_count = _new_pm_obstacle_count;
 }
 
+void GodotNavigationServer3D::process(real_t p_delta_time) {
+	if (!active) {
+		return;
+	}
+
+	for (NavMap *map : active_maps) {
+		map->sync_debug();
+	}
+}
+
 void GodotNavigationServer3D::init() {
 #ifndef _3D_DISABLED
 	navmesh_generator_3d = memnew(NavMeshGenerator3D);
@@ -1413,6 +1444,16 @@ void GodotNavigationServer3D::finish() {
 		navmesh_generator_3d = nullptr;
 	}
 #endif // _3D_DISABLED
+
+#ifdef DEBUG_ENABLED
+	for (NavMap *map : active_maps) {
+		if (map->is_usage_2d()) {
+			map->get_debug_2d()->debug_free();
+		} else {
+			map->get_debug()->debug_free();
+		}
+	}
+#endif // DEBUG_ENABLED
 }
 
 void GodotNavigationServer3D::query_path(const Ref<NavigationPathQueryParameters3D> &p_query_parameters, Ref<NavigationPathQueryResult3D> p_query_result, const Callable &p_callback) {
@@ -1511,6 +1552,94 @@ int GodotNavigationServer3D::get_process_info(ProcessInfo p_info) const {
 
 	return 0;
 }
+
+void GodotNavigationServer3D::set_debug_enabled(bool p_enabled) {
+	if (debug_enabled == p_enabled) {
+		return;
+	}
+
+	debug_enabled = p_enabled;
+
+	MutexLock lock(commands_mutex);
+	MutexLock lock2(operations_mutex);
+	for (NavMap *map : active_maps) {
+		if (map->is_usage_2d()) {
+			map->get_debug_2d()->debug_set_enabled(p_enabled);
+		} else {
+			map->get_debug()->debug_set_enabled(p_enabled);
+		}
+	}
+};
+
+bool GodotNavigationServer3D::get_debug_enabled() const {
+	return debug_enabled;
+};
+
+void GodotNavigationServer3D::debug_set_navigation_enabled(bool p_enabled) {
+	if (debug_navigation_enabled == p_enabled) {
+		return;
+	}
+
+	debug_navigation_enabled = p_enabled;
+
+	MutexLock lock(commands_mutex);
+	MutexLock lock2(operations_mutex);
+	for (NavMap *map : active_maps) {
+		if (map->is_usage_2d()) {
+			map->get_debug_2d()->debug_set_navigation_enabled(p_enabled);
+		} else {
+			map->get_debug()->debug_set_navigation_enabled(p_enabled);
+		}
+	}
+};
+
+void GodotNavigationServer3D::debug_set_avoidance_enabled(bool p_enabled) {
+	if (debug_avoidance_enabled == p_enabled) {
+		return;
+	}
+
+	debug_avoidance_enabled = p_enabled;
+
+	MutexLock lock(commands_mutex);
+	MutexLock lock2(operations_mutex);
+	for (NavMap *map : active_maps) {
+		if (map->is_usage_2d()) {
+			map->get_debug_2d()->debug_set_avoidance_enabled(p_enabled);
+		} else {
+			map->get_debug()->debug_set_avoidance_enabled(p_enabled);
+		}
+	}
+};
+
+
+void GodotNavigationServer3D::debug_map_set_enabled(RID p_map, bool p_enabled) {
+	NavMap *map = map_owner.get_or_null(p_map);
+	ERR_FAIL_NULL(map);
+
+	if (map->is_usage_2d()) {
+		map->get_debug_2d()->debug_set_enabled(p_enabled);
+	} else {
+		map->get_debug()->debug_set_enabled(p_enabled);
+	}
+};
+
+void GodotNavigationServer3D::debug_map_set_canvas(RID p_map, RID p_canvas) {
+	NavMap *map = map_owner.get_or_null(p_map);
+	ERR_FAIL_NULL(map);
+
+	if (map->is_usage_2d()) {
+		map->get_debug_2d()->debug_set_canvas(p_canvas);
+	}
+};
+
+void GodotNavigationServer3D::debug_map_set_scenario(RID p_map, RID p_scenario) {
+	NavMap *map = map_owner.get_or_null(p_map);
+	ERR_FAIL_NULL(map);
+
+	if (!map->is_usage_2d()) {
+		map->get_debug()->debug_set_scenario(p_scenario);
+	}
+};
 
 #undef COMMAND_1
 #undef COMMAND_2

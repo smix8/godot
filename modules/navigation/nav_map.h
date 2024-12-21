@@ -45,12 +45,22 @@
 #include <RVOSimulator2d.h>
 #include <RVOSimulator3d.h>
 
+#ifdef DEBUG_ENABLED
+#include "2d/nav_map_debug_2d.h"
+#include "3d/nav_map_debug_3d.h"
+#endif // DEBUG_ENABLED
+
 class NavLink;
 class NavRegion;
 class NavAgent;
 class NavObstacle;
 
 class NavMap : public NavRid {
+	friend class NavMapDebug2D;
+	friend class NavMapDebug3D;
+
+	bool active = false;
+
 	/// Map Up
 	Vector3 up = Vector3(0, 1, 0);
 
@@ -140,9 +150,17 @@ class NavMap : public NavRid {
 	void _build_iteration();
 	void _sync_iteration();
 
+	bool usage_2d = false;
+
 public:
 	NavMap();
 	~NavMap();
+
+	void set_usage_2d(bool p_enabled) { usage_2d = p_enabled; }
+	bool is_usage_2d() const { return usage_2d; }
+
+	void set_active(bool p_active);
+	bool is_active() const { return active; }
 
 	uint32_t get_iteration_id() const { return iteration_id; }
 
@@ -253,6 +271,8 @@ public:
 	void set_use_async_iterations(bool p_enabled);
 	bool get_use_async_iterations() const;
 
+	void project_settings_changed();
+
 private:
 	void _sync_dirty_map_update_requests();
 	void _sync_dirty_avoidance_update_requests();
@@ -269,6 +289,20 @@ private:
 	void _update_rvo_agents_tree_3d();
 
 	void _update_merge_rasterizer_cell_dimensions();
+
+#ifdef DEBUG_ENABLED
+private:
+	NavMapDebug3D *debug = nullptr;
+	NavMapDebug2D *debug_2d = nullptr;
+
+	bool debug_enabled = true;
+
+public:
+	void sync_debug();
+
+	NavMapDebug3D *get_debug() { return debug; }
+	NavMapDebug2D *get_debug_2d() { return debug_2d; }
+#endif // DEBUG_ENABLED
 };
 
 #endif // NAV_MAP_H
