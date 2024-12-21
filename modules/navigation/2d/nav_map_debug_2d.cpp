@@ -48,11 +48,15 @@ void NavMapDebug2D::debug_set_canvas(RID p_canvas) {
 		return;
 	}
 	debug_canvas = p_canvas;
-	debug_canvas_dirty = true;
+	//debug_canvas_dirty = true;
 	debug_update_canvas();
 };
 
 RID NavMapDebug2D::debug_get_canvas() const {
+	if (!map->is_active()) {
+		return RID();
+	}
+
 	if (!map->is_active()) {
 		return RID();
 	}
@@ -67,11 +71,15 @@ RID NavMapDebug2D::debug_get_canvas() const {
 	if (!viewport->get_world_2d()->get_canvas().is_valid()) {
 		return RID();
 	}
-	return RID();
+	//return RID();
 	return viewport->get_world_2d()->get_canvas();
 }
 
 void NavMapDebug2D::debug_update_canvas() {
+	debug_canvas_dirty = true;
+}
+
+void NavMapDebug2D::_debug_update_canvas() {
 	if (!map->is_usage_2d()) {
 		return;
 	}
@@ -99,6 +107,10 @@ void NavMapDebug2D::debug_update_canvas() {
 }
 
 void NavMapDebug2D::debug_update_mesh() {
+	debug_mesh_dirty = true;
+}
+
+void NavMapDebug2D::_debug_update_mesh() {
 	if (!debug_mesh_dirty) {
 		return;
 	}
@@ -208,6 +220,10 @@ void NavMapDebug2D::debug_update_mesh() {
 }
 
 void NavMapDebug2D::debug_update_material() {
+	debug_material_dirty = true;
+}
+
+void NavMapDebug2D::_debug_update_material() {
 	if (map->is_usage_2d()) {
 		return;
 	}
@@ -402,9 +418,15 @@ void NavMapDebug2D::sync() {
 		debug_make_dirty();
 	}
 
+	//_debug_update();
+	_debug_update_canvas();
+	_debug_update_mesh();
+	_debug_update_material();
+
 	_sync_dirty_update_requests();
 
-	debug_update();
+
+	//debug_update();
 }
 
 void NavMapDebug2D::_sync_dirty_update_requests() {

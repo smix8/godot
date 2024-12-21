@@ -43,7 +43,7 @@ void NavLinkDebug2D::debug_set_enabled(bool p_enabled) {
 
 	debug_enabled = p_enabled;
 
-	debug_mesh_dirty = true;
+	//debug_mesh_dirty = true;
 	debug_update_mesh();
 }
 
@@ -55,6 +55,15 @@ void NavLinkDebug2D::debug_update() {
 }
 
 void NavLinkDebug2D::debug_update_canvas() {
+	debug_canvas_dirty = true;
+	if (link->map) {
+		request_sync();
+	} else {
+		_debug_update_canvas();
+	}
+}
+
+void NavLinkDebug2D::_debug_update_canvas() {
 	ERR_FAIL_COND(!debug_canvas_item_rid.is_valid());
 
 	if (link->map && link->map->get_debug_2d()->debug_get_canvas().is_valid()) {
@@ -65,6 +74,11 @@ void NavLinkDebug2D::debug_update_canvas() {
 }
 
 void NavLinkDebug2D::debug_update_transform() {
+	debug_transform_dirty = true;
+	request_sync();
+}
+
+void NavLinkDebug2D::_debug_update_transform() {
 	if (!debug_transform_dirty) {
 		return;
 	}
@@ -72,6 +86,11 @@ void NavLinkDebug2D::debug_update_transform() {
 };
 
 void NavLinkDebug2D::debug_update_mesh() {
+	debug_mesh_dirty = true;
+	request_sync();
+}
+
+void NavLinkDebug2D::_debug_update_mesh() {
 	if (!debug_mesh_dirty) {
 		return;
 	}
@@ -83,11 +102,9 @@ void NavLinkDebug2D::debug_update_mesh() {
 	ERR_FAIL_COND(!debug_canvas_item_rid.is_valid());
 	rs->canvas_item_clear(debug_canvas_item_rid);
 
-	if (!debug_enabled) {
+	if (!debug_enabled || !link->map) {
 		return;
 	}
-
-	ERR_FAIL_NULL(link->map);
 
 	rs->canvas_item_set_parent(debug_canvas_item_rid, link->map->get_debug_2d()->debug_get_canvas());
 
@@ -119,11 +136,23 @@ void NavLinkDebug2D::debug_update_mesh() {
 }
 
 void NavLinkDebug2D::debug_update_material() {
+	debug_material_dirty = true;
+	request_sync();
+}
+
+void NavLinkDebug2D::_debug_update_material() {
 	if (!debug_material_dirty) {
 		return;
 	}
 	debug_material_dirty = false;
 }
+
+void NavLinkDebug2D::debug_make_dirty() {
+	debug_canvas_dirty = true;
+	debug_transform_dirty = true;
+	debug_mesh_dirty = true;
+	debug_material_dirty = true;
+};
 
 void NavLinkDebug2D::debug_free() {
 	RenderingServer *rs = RenderingServer::get_singleton();
@@ -136,7 +165,10 @@ void NavLinkDebug2D::debug_free() {
 }
 
 void NavLinkDebug2D::sync() {
-	
+	_debug_update_canvas();
+	_debug_update_transform();
+	_debug_update_mesh();
+	_debug_update_material();
 }
 
 void NavLinkDebug2D::request_sync() {

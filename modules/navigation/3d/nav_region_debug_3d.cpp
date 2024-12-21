@@ -43,7 +43,7 @@ void NavRegionDebug3D::debug_set_enabled(bool p_enabled) {
 
 	debug_enabled = p_enabled;
 
-	debug_mesh_dirty = true;
+	//debug_mesh_dirty = true;
 	debug_update_mesh();
 }
 
@@ -55,6 +55,15 @@ void NavRegionDebug3D::debug_update() {
 }
 
 void NavRegionDebug3D::debug_update_scenario() {
+	debug_scenario_dirty = true;
+	if (region->map) {
+		request_sync();
+	} else {
+		_debug_update_scenario();
+	}
+}
+
+void NavRegionDebug3D::_debug_update_scenario() {
 	ERR_FAIL_COND(!debug_instance_rid.is_valid());
 
 	if (region->map && region->map->get_debug()->debug_get_scenario().is_valid()) {
@@ -65,6 +74,11 @@ void NavRegionDebug3D::debug_update_scenario() {
 }
 
 void NavRegionDebug3D::debug_update_transform() {
+	debug_transform_dirty = true;
+	request_sync();
+}
+
+void NavRegionDebug3D::_debug_update_transform() {
 	if (!debug_transform_dirty) {
 		return;
 	}
@@ -76,6 +90,11 @@ void NavRegionDebug3D::debug_update_transform() {
 };
 
 void NavRegionDebug3D::debug_update_mesh() {
+	debug_mesh_dirty = true;
+	request_sync();
+}
+
+void NavRegionDebug3D::_debug_update_mesh() {
 	if (!debug_mesh_dirty) {
 		return;
 	}
@@ -89,11 +108,9 @@ void NavRegionDebug3D::debug_update_mesh() {
 	ERR_FAIL_COND(!debug_mesh_rid.is_valid());
 	ERR_FAIL_COND(!debug_instance_rid.is_valid());
 
-	if (!debug_enabled) {
+	if (!debug_enabled || !region->map) {
 		return;
 	}
-
-	ERR_FAIL_NULL(region->map);
 
 	const Vector<Vector3> &navmesh_vertices = region->navmesh_vertices;
 	const Vector<Vector<int>> &navmesh_polygons = region->navmesh_polygons;
@@ -204,11 +221,17 @@ void NavRegionDebug3D::debug_update_mesh() {
 	}
 
 	debug_material_dirty = true;
-	debug_update_material();
-	debug_update_scenario();
+	_debug_update_material();
+	debug_scenario_dirty  = true;
+	_debug_update_scenario();
 };
 
 void NavRegionDebug3D::debug_update_material() {
+	debug_material_dirty = true;
+	request_sync();
+}
+
+void NavRegionDebug3D::_debug_update_material() {
 	if (!debug_material_dirty) {
 		return;
 	}
@@ -247,6 +270,14 @@ void NavRegionDebug3D::debug_update_material() {
 	}
 };
 
+void NavRegionDebug3D::debug_make_dirty() {
+	debug_scenario_dirty = true;
+	debug_transform_dirty = true;
+	debug_mesh_dirty = true;
+	debug_material_dirty = true;
+	request_sync();
+};
+
 void NavRegionDebug3D::debug_free() {
 	RenderingServer *rs = RenderingServer::get_singleton();
 	ERR_FAIL_NULL(rs);
@@ -262,7 +293,10 @@ void NavRegionDebug3D::debug_free() {
 }
 
 void NavRegionDebug3D::sync() {
-	
+	_debug_update_scenario();
+	_debug_update_transform();
+	_debug_update_mesh();
+	_debug_update_material();
 }
 
 void NavRegionDebug3D::request_sync() {

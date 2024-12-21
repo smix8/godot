@@ -54,9 +54,10 @@ void NavRegion::set_map(NavMap *p_map) {
 		map->add_region(this);
 		request_sync();
 	}
+
 #ifdef DEBUG_ENABLED
-	debug_2d->debug_update_canvas();
-	debug->debug_update_scenario();
+	debug_2d->debug_update();
+	debug->debug_update();
 #endif // DEBUG_ENABLED
 }
 

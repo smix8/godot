@@ -43,18 +43,27 @@ void NavRegionDebug2D::debug_set_enabled(bool p_enabled) {
 
 	debug_enabled = p_enabled;
 
-	debug_mesh_dirty = true;
+	//debug_mesh_dirty = true;
 	debug_update_mesh();
 }
 
 void NavRegionDebug2D::debug_update() {
 	debug_update_canvas();
-	//debug_update_transform();
-	//debug_update_mesh();
-	//debug_update_material();
+	debug_update_transform();
+	debug_update_mesh();
+	debug_update_material();
 }
 
 void NavRegionDebug2D::debug_update_canvas() {
+	debug_canvas_dirty = true;
+	if (region->map) {
+		request_sync();
+	} else {
+		_debug_update_canvas();
+	}
+}
+
+void NavRegionDebug2D::_debug_update_canvas() {
 	ERR_FAIL_COND(!debug_canvas_item_rid.is_valid());
 
 	if (region->map && region->map->get_debug_2d()->debug_get_canvas().is_valid()) {
@@ -65,6 +74,11 @@ void NavRegionDebug2D::debug_update_canvas() {
 }
 
 void NavRegionDebug2D::debug_update_transform() {
+	debug_transform_dirty = true;
+	request_sync();
+}
+
+void NavRegionDebug2D::_debug_update_transform() {
 	if (!debug_transform_dirty) {
 		return;
 	}
@@ -79,6 +93,11 @@ void NavRegionDebug2D::debug_update_transform() {
 };
 
 void NavRegionDebug2D::debug_update_mesh() {
+	debug_mesh_dirty = true;
+	request_sync();
+}
+
+void NavRegionDebug2D::_debug_update_mesh() {
 	if (!debug_mesh_dirty) {
 		return;
 	}
@@ -90,16 +109,14 @@ void NavRegionDebug2D::debug_update_mesh() {
 	ERR_FAIL_NULL(ns2d);
 
 	ERR_FAIL_COND(!debug_canvas_item_rid.is_valid());
-	ERR_FAIL_COND(!debug_mesh2d_rid.is_valid());
+	ERR_FAIL_COND(!debug_mesh_rid.is_valid());
 
 	rs->canvas_item_clear(debug_canvas_item_rid);
-	rs->mesh_clear(debug_mesh2d_rid);
+	rs->mesh_clear(debug_mesh_rid);
 
-	if (!debug_enabled) {
+	if (!debug_enabled || !region->map) {
 		return;
 	}
-
-	ERR_FAIL_NULL(region->map);
 
 	rs->canvas_item_set_parent(debug_canvas_item_rid, region->map->get_debug_2d()->debug_get_canvas());
 
@@ -215,7 +232,7 @@ void NavRegionDebug2D::debug_update_mesh() {
 	face_mesh_array_2d[RS::ARRAY_VERTEX] = face_vertex_array_2d;
 	face_mesh_array_2d[RS::ARRAY_COLOR] = face_color_array;
 
-	rs->mesh_add_surface_from_arrays(debug_mesh2d_rid, RS::PRIMITIVE_TRIANGLES, face_mesh_array_2d, Array(), Dictionary(), RS::ARRAY_FLAG_USE_2D_VERTICES);
+	rs->mesh_add_surface_from_arrays(debug_mesh_rid, RS::PRIMITIVE_TRIANGLES, face_mesh_array_2d, Array(), Dictionary(), RS::ARRAY_FLAG_USE_2D_VERTICES);
 
 	if (enabled_edge_lines) {
 		Vector<Vector2> line_vertex_array_2d;
@@ -233,10 +250,10 @@ void NavRegionDebug2D::debug_update_mesh() {
 		line_mesh_array[RS::ARRAY_VERTEX] = line_vertex_array_2d;
 		line_mesh_array[RS::ARRAY_COLOR] = line_color_array_2d;
 
-		rs->mesh_add_surface_from_arrays(debug_mesh2d_rid, RS::PRIMITIVE_LINES, line_mesh_array, Array(), Dictionary(), RS::ARRAY_FLAG_USE_2D_VERTICES);
+		rs->mesh_add_surface_from_arrays(debug_mesh_rid, RS::PRIMITIVE_LINES, line_mesh_array, Array(), Dictionary(), RS::ARRAY_FLAG_USE_2D_VERTICES);
 	}
 
-	rs->canvas_item_add_mesh(debug_canvas_item_rid, debug_mesh2d_rid, Transform2D());
+	rs->canvas_item_add_mesh(debug_canvas_item_rid, debug_mesh_rid, Transform2D());
 
 	debug_material_dirty = true;
 	debug_update_material();
@@ -244,10 +261,22 @@ void NavRegionDebug2D::debug_update_mesh() {
 };
 
 void NavRegionDebug2D::debug_update_material() {
+	debug_material_dirty = true;
+	request_sync();
+}
+
+void NavRegionDebug2D::_debug_update_material() {
 	if (!debug_material_dirty) {
 		return;
 	}
 	debug_material_dirty = false;
+};
+
+void NavRegionDebug2D::debug_make_dirty() {
+	debug_canvas_dirty = true;
+	debug_transform_dirty = true;
+	debug_mesh_dirty = true;
+	debug_material_dirty = true;
 };
 
 void NavRegionDebug2D::debug_free() {
@@ -258,14 +287,17 @@ void NavRegionDebug2D::debug_free() {
 		rs->free(debug_canvas_item_rid);
 		debug_canvas_item_rid = RID();
 	}
-	if (debug_mesh2d_rid.is_valid()) {
-		rs->free(debug_mesh2d_rid);
-		debug_mesh2d_rid = RID();
+	if (debug_mesh_rid.is_valid()) {
+		rs->free(debug_mesh_rid);
+		debug_mesh_rid = RID();
 	}
 }
 
 void NavRegionDebug2D::sync() {
-	
+	_debug_update_canvas();
+	_debug_update_transform();
+	_debug_update_mesh();
+	_debug_update_material();
 }
 
 void NavRegionDebug2D::request_sync() {
@@ -289,7 +321,7 @@ NavRegionDebug2D::NavRegionDebug2D(NavRegion *p_region) :
 	ERR_FAIL_NULL(rs);
 
 	debug_canvas_item_rid = rs->canvas_item_create();
-	debug_mesh2d_rid = rs->mesh_create();
+	debug_mesh_rid = rs->mesh_create();
 }
 
 NavRegionDebug2D::~NavRegionDebug2D() {

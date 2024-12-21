@@ -52,7 +52,7 @@ void NavMapDebug3D::debug_set_scenario(RID p_scenario) {
 		return;
 	}
 	debug_scenario = p_scenario;
-	debug_scenario_dirty = true;
+	//debug_scenario_dirty = true;
 	debug_update_scenario();
 };
 
@@ -64,6 +64,7 @@ RID NavMapDebug3D::debug_get_scenario() const {
 	if (!map->is_active()) {
 		return RID();
 	}
+
 	if (debug_scenario.is_valid()) {
 		return debug_scenario;
 	}
@@ -79,6 +80,10 @@ RID NavMapDebug3D::debug_get_scenario() const {
 }
 
 void NavMapDebug3D::debug_update_scenario() {
+	debug_scenario_dirty = true;
+}
+
+void NavMapDebug3D::_debug_update_scenario() {
 	if (map->is_usage_2d()) {
 		return;
 	}
@@ -106,6 +111,10 @@ void NavMapDebug3D::debug_update_scenario() {
 }
 
 void NavMapDebug3D::debug_update_mesh() {
+	debug_mesh_dirty = true;
+}
+
+void NavMapDebug3D::_debug_update_mesh() {
 	if (!debug_mesh_dirty) {
 		return;
 	}
@@ -201,10 +210,15 @@ void NavMapDebug3D::debug_update_mesh() {
 
 	debug_material_dirty = true;
 	debug_update_material();
+	debug_scenario_dirty = true;
 	debug_update_scenario();
 }
 
 void NavMapDebug3D::debug_update_material() {
+	debug_material_dirty = true;
+}
+
+void NavMapDebug3D::_debug_update_material() {
 	if (map->is_usage_2d()) {
 		return;
 	}
@@ -411,9 +425,14 @@ void NavMapDebug3D::sync() {
 		debug_make_dirty();
 	}
 
+	_debug_update_scenario();
+	//_debug_update_transform();
+	_debug_update_mesh();
+	_debug_update_material();
+
 	_sync_dirty_update_requests();
 
-	debug_update();
+	//debug_update();
 }
 
 void NavMapDebug3D::_sync_dirty_update_requests() {

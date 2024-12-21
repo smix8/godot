@@ -55,8 +55,6 @@ class NavMapDebug2D {
 	bool debug_avoidance_enabled = true;
 
 	bool debug_canvas_dirty = false;
-
-	bool debug_canvas_item_dirty = false;
 	bool debug_mesh_dirty = false;
 	bool debug_material_dirty = false;
 
@@ -66,6 +64,13 @@ class NavMapDebug2D {
 		//SelfList<NavAgentDebug2D>::List agents;
 		SelfList<NavObstacleDebug2D>::List obstacles;
 	} sync_dirty_requests;
+
+	void _debug_update();
+	void _debug_update_canvas();
+	void _debug_update_mesh();
+	void _debug_update_material();
+
+	void _sync_dirty_update_requests();
 
 public:
 	void debug_set_canvas(RID p_canvas);
@@ -91,12 +96,6 @@ public:
 	bool debug_settings_dirty = true;
 	bool project_settings_dirty = true;
 	void project_settings_changed();
-
-	//void debug_update_queue_region(NavRegion *p_region, bool p_transform, bool p_mesh, bool p_material);
-	//void debug_update_queue_link(NavLink *p_link, bool p_transform, bool p_mesh, bool p_material);
-	//void debug_update_queue_obstacle(NavObstacle *p_obstacle, bool p_transform, bool p_mesh, bool p_material);
-
-	void _sync_dirty_update_requests();
 
 	void add_region_sync_dirty_request(SelfList<NavRegionDebug2D> *p_sync_request);
 	void add_link_sync_dirty_request(SelfList<NavLinkDebug2D> *p_sync_request);

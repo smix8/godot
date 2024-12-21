@@ -43,11 +43,17 @@ class NavRegionDebug3D {
 	RID debug_instance_rid;
 
 	bool debug_enabled = true;
+	bool debug_scenario_dirty = false;
 	bool debug_transform_dirty = false;
 	bool debug_mesh_dirty = false;
 	bool debug_material_dirty = false;
 
 	SelfList<NavRegionDebug3D> sync_dirty_request_list_element;
+
+	void _debug_update_scenario();
+	void _debug_update_transform();
+	void _debug_update_mesh();
+	void _debug_update_material();
 
 public:
 	void debug_set_enabled(bool p_enabled);
@@ -56,11 +62,7 @@ public:
 	void debug_update_transform();
 	void debug_update_mesh();
 	void debug_update_material();
-	void debug_make_dirty() {
-		debug_transform_dirty = true;
-		debug_mesh_dirty = true;
-		debug_material_dirty = true;
-	};
+	void debug_make_dirty();
 	void debug_free();
 
 	void sync();

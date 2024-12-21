@@ -66,6 +66,13 @@ class NavMapDebug3D {
 		SelfList<NavObstacleDebug3D>::List obstacles;
 	} sync_dirty_requests;
 
+	void _debug_update();
+	void _debug_update_scenario();
+	void _debug_update_mesh();
+	void _debug_update_material();
+
+	void _sync_dirty_update_requests();
+
 public:
 	void debug_set_scenario(RID p_scenario);
 	RID debug_get_scenario() const;
@@ -90,12 +97,6 @@ public:
 	bool debug_settings_dirty = true;
 	bool project_settings_dirty = true;
 	void project_settings_changed();
-
-	//void debug_update_queue_region(NavRegion *p_region, bool p_transform, bool p_mesh, bool p_material);
-	//void debug_update_queue_link(NavLink *p_link, bool p_transform, bool p_mesh, bool p_material);
-	//void debug_update_queue_obstacle(NavObstacle *p_obstacle, bool p_transform, bool p_mesh, bool p_material);
-
-	void _sync_dirty_update_requests();
 
 	void add_region_sync_dirty_request(SelfList<NavRegionDebug3D> *p_sync_request);
 	void add_link_sync_dirty_request(SelfList<NavLinkDebug3D> *p_sync_request);

@@ -40,14 +40,20 @@ class NavRegionDebug2D {
 	NavRegion *region = nullptr;
 
 	RID debug_canvas_item_rid;
-	RID debug_mesh2d_rid;
+	RID debug_mesh_rid;
 
 	bool debug_enabled = true;
+	bool debug_canvas_dirty = false;
 	bool debug_transform_dirty = false;
 	bool debug_mesh_dirty = false;
 	bool debug_material_dirty = false;
 
 	SelfList<NavRegionDebug2D> sync_dirty_request_list_element;
+
+	void _debug_update_canvas();
+	void _debug_update_transform();
+	void _debug_update_mesh();
+	void _debug_update_material();
 
 public:
 	void debug_set_enabled(bool p_enabled);
@@ -56,11 +62,7 @@ public:
 	void debug_update_transform();
 	void debug_update_mesh();
 	void debug_update_material();
-	void debug_make_dirty() {
-		debug_transform_dirty = true;
-		debug_mesh_dirty = true;
-		debug_material_dirty = true;
-	};
+	void debug_make_dirty();
 	void debug_free();
 
 	void sync();

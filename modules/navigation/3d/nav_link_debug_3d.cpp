@@ -43,7 +43,7 @@ void NavLinkDebug3D::debug_set_enabled(bool p_enabled) {
 
 	debug_enabled = p_enabled;
 
-	debug_mesh_dirty = true;
+	//debug_mesh_dirty = true;
 	debug_update_mesh();
 }
 
@@ -55,6 +55,15 @@ void NavLinkDebug3D::debug_update() {
 }
 
 void NavLinkDebug3D::debug_update_scenario() {
+	debug_scenario_dirty  = true;
+	if (link->map) {
+		request_sync();
+	} else {
+		_debug_update_scenario();
+	}
+}
+
+void NavLinkDebug3D::_debug_update_scenario() {
 	ERR_FAIL_COND(!debug_instance_rid.is_valid());
 
 	if (link->map && link->map->get_debug()->debug_get_scenario().is_valid()) {
@@ -65,6 +74,11 @@ void NavLinkDebug3D::debug_update_scenario() {
 }
 
 void NavLinkDebug3D::debug_update_transform() {
+	debug_transform_dirty  = true;
+	request_sync();
+}
+
+void NavLinkDebug3D::_debug_update_transform() {
 	if (!debug_transform_dirty) {
 		return;
 	}
@@ -74,6 +88,11 @@ void NavLinkDebug3D::debug_update_transform() {
 };
 
 void NavLinkDebug3D::debug_update_mesh() {
+	debug_mesh_dirty  = true;
+	request_sync();
+}
+
+void NavLinkDebug3D::_debug_update_mesh() {
 	if (!debug_mesh_dirty) {
 		return;
 	}
@@ -87,11 +106,9 @@ void NavLinkDebug3D::debug_update_mesh() {
 
 	rs->mesh_clear(debug_mesh_rid);
 
-	if (!debug_enabled) {
+	if (!debug_enabled || !link->map) {
 		return;
 	}
-
-	ERR_FAIL_NULL(link->map);
 
 	rs->instance_set_scenario(debug_instance_rid, link->map->get_debug()->debug_get_scenario());
 
@@ -170,11 +187,17 @@ void NavLinkDebug3D::debug_update_mesh() {
 	rs->mesh_add_surface_from_arrays(debug_mesh_rid, RS::PRIMITIVE_LINES, line_mesh_array);
 
 	debug_material_dirty = true;
-	debug_update_material();
-	debug_update_scenario();
+	_debug_update_material();
+	debug_scenario_dirty  = true;
+	_debug_update_scenario();
 }
 
 void NavLinkDebug3D::debug_update_material() {
+	debug_material_dirty = true;
+	request_sync();
+}
+
+void NavLinkDebug3D::_debug_update_material() {
 	if (!debug_material_dirty) {
 		return;
 	}
@@ -200,6 +223,14 @@ void NavLinkDebug3D::debug_update_material() {
 	}
 }
 
+void NavLinkDebug3D::debug_make_dirty() {
+	debug_scenario_dirty = true;
+	debug_transform_dirty = true;
+	debug_mesh_dirty = true;
+	debug_material_dirty = true;
+	request_sync();
+};
+
 void NavLinkDebug3D::debug_free() {
 	RenderingServer *rs = RenderingServer::get_singleton();
 	ERR_FAIL_NULL(rs);
@@ -215,7 +246,10 @@ void NavLinkDebug3D::debug_free() {
 }
 
 void NavLinkDebug3D::sync() {
-	
+	_debug_update_scenario();
+	_debug_update_transform();
+	_debug_update_mesh();
+	_debug_update_material();
 }
 
 void NavLinkDebug3D::request_sync() {

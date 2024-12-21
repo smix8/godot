@@ -44,7 +44,7 @@ void NavObstacleDebug2D::debug_set_enabled(bool p_enabled) {
 
 	debug_enabled = p_enabled;
 
-	debug_mesh_dirty = true;
+	//debug_mesh_dirty = true;
 	debug_update_mesh();
 }
 
@@ -56,6 +56,15 @@ void NavObstacleDebug2D::debug_update() {
 }
 
 void NavObstacleDebug2D::debug_update_canvas() {
+	debug_canvas_dirty = true;
+	if (obstacle->map) {
+		request_sync();
+	} else {
+		_debug_update_canvas();
+	}
+}
+
+void NavObstacleDebug2D::_debug_update_canvas() {
 	ERR_FAIL_COND(!debug_canvas_item_rid.is_valid());
 
 	if (obstacle->map && obstacle->map->get_debug_2d()->debug_get_canvas().is_valid()) {
@@ -66,6 +75,11 @@ void NavObstacleDebug2D::debug_update_canvas() {
 }
 
 void NavObstacleDebug2D::debug_update_transform() {
+	debug_transform_dirty = true;
+	request_sync();
+}
+
+void NavObstacleDebug2D::_debug_update_transform() {
 	if (!debug_transform_dirty) {
 		return;
 	}
@@ -75,6 +89,11 @@ void NavObstacleDebug2D::debug_update_transform() {
 };
 
 void NavObstacleDebug2D::debug_update_mesh() {
+	debug_mesh_dirty = true;
+	request_sync();
+}
+
+void NavObstacleDebug2D::_debug_update_mesh() {
 	if (!debug_mesh_dirty) {
 		return;
 	}
@@ -84,9 +103,12 @@ void NavObstacleDebug2D::debug_update_mesh() {
 	ERR_FAIL_NULL(rs);
 
 	ERR_FAIL_COND(!debug_canvas_item_rid.is_valid());
-	rs->canvas_item_clear(debug_canvas_item_rid);
+	ERR_FAIL_COND(!debug_mesh_rid.is_valid());
 
-	if (!debug_enabled) {
+	rs->canvas_item_clear(debug_canvas_item_rid);
+	rs->mesh_clear(debug_mesh_rid);
+
+	if (!debug_enabled || !obstacle->map) {
 		return;
 	}
 
@@ -125,7 +147,7 @@ void NavObstacleDebug2D::debug_update_mesh() {
 		debug_obstacle_polygon_colors.resize(debug_obstacle_polygon_vertices.size());
 		debug_obstacle_polygon_colors.fill(debug_static_obstacle_face_color);
 
-		RS::get_singleton()->canvas_item_add_polygon(debug_canvas_item_rid, debug_obstacle_polygon_vertices, debug_obstacle_polygon_colors);
+		rs->canvas_item_add_polygon(debug_canvas_item_rid, debug_obstacle_polygon_vertices, debug_obstacle_polygon_colors);
 
 		Color debug_static_obstacle_edge_color;
 
@@ -143,12 +165,14 @@ void NavObstacleDebug2D::debug_update_mesh() {
 		debug_obstacle_line_colors.resize(debug_obstacle_line_vertices.size());
 		debug_obstacle_line_colors.fill(debug_static_obstacle_edge_color);
 
-		RS::get_singleton()->canvas_item_add_polyline(debug_canvas_item_rid, debug_obstacle_line_vertices, debug_obstacle_line_colors, 4.0);
+		rs->canvas_item_add_polyline(debug_canvas_item_rid, debug_obstacle_line_vertices, debug_obstacle_line_colors, 4.0);
+
+		rs->mesh_add_surface_from_arrays(debug_mesh_rid, RS::PRIMITIVE_LINES, face_mesh_array_2d, Array(), Dictionary(), RS::ARRAY_FLAG_USE_2D_VERTICES);
 	}
 
 	if (obstacle_radius > 0.0 && NavigationServer2D::get_singleton()->get_debug_navigation_avoidance_enable_obstacles_radius()) {
 		Color debug_radius_color = NavigationServer2D::get_singleton()->get_debug_navigation_avoidance_obstacles_radius_color();
-		RS::get_singleton()->canvas_item_add_circle(debug_canvas_item_rid, Vector2(), obstacle_radius, debug_radius_color);
+		rs->canvas_item_add_circle(debug_canvas_item_rid, Vector2(), obstacle_radius, debug_radius_color);
 	}
 
 	debug_material_dirty = true;
@@ -157,11 +181,23 @@ void NavObstacleDebug2D::debug_update_mesh() {
 }
 
 void NavObstacleDebug2D::debug_update_material() {
+	debug_material_dirty = true;
+	request_sync();
+}
+
+void NavObstacleDebug2D::_debug_update_material() {
 	if (!debug_material_dirty) {
 		return;
 	}
 	debug_material_dirty = false;
 }
+
+void NavObstacleDebug2D::debug_make_dirty() {
+	debug_canvas_dirty = true;
+	debug_transform_dirty = true;
+	debug_mesh_dirty = true;
+	debug_material_dirty = true;
+};
 
 void NavObstacleDebug2D::debug_free() {
 	RenderingServer *rs = RenderingServer::get_singleton();
@@ -174,7 +210,10 @@ void NavObstacleDebug2D::debug_free() {
 }
 
 void NavObstacleDebug2D::sync() {
-	
+	_debug_update_canvas();
+	_debug_update_transform();
+	_debug_update_mesh();
+	_debug_update_material();
 }
 
 void NavObstacleDebug2D::request_sync() {

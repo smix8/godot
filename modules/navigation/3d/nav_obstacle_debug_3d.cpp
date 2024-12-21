@@ -44,7 +44,7 @@ void NavObstacleDebug3D::debug_set_enabled(bool p_enabled) {
 
 	debug_enabled = p_enabled;
 
-	debug_mesh_dirty = true;
+	//debug_mesh_dirty = true;
 	debug_update_mesh();
 }
 
@@ -56,6 +56,15 @@ void NavObstacleDebug3D::debug_update() {
 }
 
 void NavObstacleDebug3D::debug_update_scenario() {
+	debug_scenario_dirty = true;
+	if (obstacle->map) {
+		request_sync();
+	} else {
+		_debug_update_scenario();
+	}
+}
+
+void NavObstacleDebug3D::_debug_update_scenario() {
 	RenderingServer *rs = RenderingServer::get_singleton();
 	ERR_FAIL_NULL(rs);
 
@@ -72,6 +81,11 @@ void NavObstacleDebug3D::debug_update_scenario() {
 }
 
 void NavObstacleDebug3D::debug_update_transform() {
+	debug_transform_dirty = true;
+	request_sync();
+}
+
+void NavObstacleDebug3D::_debug_update_transform() {
 	if (!debug_transform_dirty) {
 		return;
 	}
@@ -89,6 +103,11 @@ void NavObstacleDebug3D::debug_update_transform() {
 };
 
 void NavObstacleDebug3D::debug_update_mesh() {
+	debug_mesh_dirty = true;
+	request_sync();
+}
+
+void NavObstacleDebug3D::_debug_update_mesh() {
 	if (!debug_mesh_dirty) {
 		return;
 	}
@@ -102,7 +121,7 @@ void NavObstacleDebug3D::debug_update_mesh() {
 
 	rs->mesh_clear(debug_mesh_rid);
 
-	if (!debug_enabled) {
+	if (!debug_enabled || obstacle->map) {
 		return;
 	}
 
@@ -215,11 +234,17 @@ void NavObstacleDebug3D::debug_update_mesh() {
 	}
 
 	debug_material_dirty = true;
-	debug_update_material();
-	debug_update_scenario();
+	_debug_update_material();
+	debug_scenario_dirty  = true;
+	_debug_update_scenario();
 }
 
 void NavObstacleDebug3D::debug_update_material() {
+	debug_material_dirty = true;
+	request_sync();
+}
+
+void NavObstacleDebug3D::_debug_update_material() {
 	if (!debug_material_dirty) {
 		return;
 	}
@@ -249,6 +274,14 @@ void NavObstacleDebug3D::debug_update_material() {
 	}
 }
 
+void NavObstacleDebug3D::debug_make_dirty() {
+	debug_scenario_dirty = true;
+	debug_transform_dirty = true;
+	debug_mesh_dirty = true;
+	debug_material_dirty = true;
+	request_sync();
+};
+
 void NavObstacleDebug3D::debug_free() {
 	RenderingServer *rs = RenderingServer::get_singleton();
 	ERR_FAIL_NULL(rs);
@@ -273,7 +306,10 @@ void NavObstacleDebug3D::debug_free() {
 }
 
 void NavObstacleDebug3D::sync() {
-	
+	_debug_update_scenario();
+	_debug_update_transform();
+	_debug_update_mesh();
+	_debug_update_material();
 }
 
 void NavObstacleDebug3D::request_sync() {
