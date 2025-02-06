@@ -97,9 +97,10 @@ void NavRegion::set_navigation_mesh(Ref<NavigationMesh> p_navigation_mesh) {
 
 	pending_navmesh_vertices.clear();
 	pending_navmesh_polygons.clear();
+	pending_navmesh_polygons_meta.clear();
 
 	if (p_navigation_mesh.is_valid()) {
-		p_navigation_mesh->get_data(pending_navmesh_vertices, pending_navmesh_polygons);
+		p_navigation_mesh->get_data(pending_navmesh_vertices, pending_navmesh_polygons, pending_navmesh_polygons_meta);
 	}
 
 	polygons_dirty = true;
@@ -243,11 +244,17 @@ void NavRegion::update_polygons() {
 
 	real_t _new_region_surface_area = 0.0;
 
+	bool use_polygon_meta = pending_navmesh_polygons_meta.size() > 0 && polygons.size() == pending_navmesh_polygons_meta.size();
+
 	// Build
 	int navigation_mesh_polygon_index = 0;
 	for (gd::Polygon &polygon : polygons) {
 		polygon.owner = this;
 		polygon.surface_area = 0.0;
+		polygon.navigation_layers = navigation_layers;
+		if (use_polygon_meta) {
+			polygon.navigation_layers = pending_navmesh_polygons_meta[navigation_mesh_polygon_index];
+		}
 
 		Vector<int> navigation_mesh_polygon = pending_navmesh_polygons[navigation_mesh_polygon_index];
 		navigation_mesh_polygon_index += 1;

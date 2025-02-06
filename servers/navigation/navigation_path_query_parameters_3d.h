@@ -32,7 +32,9 @@
 #define NAVIGATION_PATH_QUERY_PARAMETERS_3D_H
 
 #include "core/object/ref_counted.h"
+#include "servers/navigation/navigation_layers_cost_map.h"
 #include "servers/navigation/navigation_utilities.h"
+#include "servers/navigation/navigation_layers_cost_map.h"
 
 class NavigationPathQueryParameters3D : public RefCounted {
 	GDCLASS(NavigationPathQueryParameters3D, RefCounted);
@@ -80,6 +82,9 @@ public:
 	void set_navigation_layers(uint32_t p_navigation_layers);
 	uint32_t get_navigation_layers() const;
 
+	void set_navigation_layer_value(int p_layer_number, bool p_value);
+	bool get_navigation_layer_value(int p_layer_number) const;
+
 	void set_metadata_flags(BitField<NavigationPathQueryParameters3D::PathMetadataFlags> p_flags);
 	BitField<NavigationPathQueryParameters3D::PathMetadataFlags> get_metadata_flags() const;
 
@@ -88,6 +93,9 @@ public:
 
 	void set_simplify_epsilon(real_t p_epsilon);
 	real_t get_simplify_epsilon() const;
+
+	void set_navigation_layers_cost_map(const Ref<NavigationLayersCostMap> &p_cost_map);
+	Ref<NavigationLayersCostMap> get_navigation_layers_cost_map() const;
 };
 
 VARIANT_ENUM_CAST(NavigationPathQueryParameters3D::PathfindingAlgorithm);

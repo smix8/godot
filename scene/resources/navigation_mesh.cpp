@@ -334,6 +334,27 @@ Array NavigationMesh::_get_polygons() const {
 	return ret;
 }
 
+void NavigationMesh::_set_polygons_meta(const Array &p_polygons_meta) {
+	RWLockWrite write_lock(rwlock);
+
+	polygons_meta.resize(p_polygons_meta.size());
+	for (int i = 0; i < p_polygons_meta.size(); i++) {
+		polygons_meta.write[i] = p_polygons_meta[i];
+	}
+}
+
+Array NavigationMesh::_get_polygons_meta() const {
+	RWLockRead read_lock(rwlock);
+
+	Array ret;
+	ret.resize(polygons_meta.size());
+	for (int i = 0; i < ret.size(); i++) {
+		ret[i] = polygons_meta[i];
+	}
+
+	return ret;
+}
+
 void NavigationMesh::add_polygon(const Vector<int> &p_polygon) {
 	RWLockWrite write_lock(rwlock);
 	Polygon polygon;
@@ -371,6 +392,21 @@ void NavigationMesh::set_data(const Vector<Vector3> &p_vertices, const Vector<Ve
 	for (int i = 0; i < p_polygons.size(); i++) {
 		polygons.write[i].indices = p_polygons[i];
 	}
+
+	//polygons = p_polygons;
+	polygons_meta = Vector<uint32_t>();
+}
+
+void NavigationMesh::set_data(const Vector<Vector3> &p_vertices, const Vector<Vector<int>> &p_polygons, const Vector<uint32_t> &p_polygons_meta) {
+	RWLockWrite write_lock(rwlock);
+	vertices = p_vertices;
+	polygons.resize(p_polygons.size());
+	for (int i = 0; i < p_polygons.size(); i++) {
+		polygons.write[i].indices = p_polygons[i];
+	}
+
+	//polygons = p_polygons;
+	polygons_meta = p_polygons_meta;
 }
 
 void NavigationMesh::get_data(Vector<Vector3> &r_vertices, Vector<Vector<int>> &r_polygons) {
@@ -380,6 +416,19 @@ void NavigationMesh::get_data(Vector<Vector3> &r_vertices, Vector<Vector<int>> &
 	for (int i = 0; i < polygons.size(); i++) {
 		r_polygons.write[i] = polygons[i].indices;
 	}
+}
+
+void NavigationMesh::get_data(Vector<Vector3> &r_vertices, Vector<Vector<int>> &r_polygons, Vector<uint32_t> &r_polygons_meta) {
+	RWLockRead read_lock(rwlock);
+	r_vertices = vertices;
+
+	r_polygons.resize(polygons.size());
+	for (int i = 0; i < polygons.size(); i++) {
+		r_polygons.write[i] = polygons[i].indices;
+	}
+
+	//r_polygons = polygons;
+	r_polygons_meta = polygons_meta;
 }
 
 #ifdef DEBUG_ENABLED
@@ -564,10 +613,14 @@ void NavigationMesh::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_set_polygons", "polygons"), &NavigationMesh::_set_polygons);
 	ClassDB::bind_method(D_METHOD("_get_polygons"), &NavigationMesh::_get_polygons);
 
+	ClassDB::bind_method(D_METHOD("_set_polygons_meta", "polygons_meta"), &NavigationMesh::_set_polygons_meta);
+	ClassDB::bind_method(D_METHOD("_get_polygons_meta"), &NavigationMesh::_get_polygons_meta);
+
 	ClassDB::bind_method(D_METHOD("clear"), &NavigationMesh::clear);
 
 	ADD_PROPERTY(PropertyInfo(Variant::PACKED_VECTOR3_ARRAY, "vertices", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "set_vertices", "get_vertices");
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "polygons", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_polygons", "_get_polygons");
+	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "polygons_meta", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_polygons_meta", "_get_polygons_meta");
 
 	ADD_GROUP("Sampling", "sample_");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "sample_partition_type", PROPERTY_HINT_ENUM, "Watershed,Monotone,Layers"), "set_sample_partition_type", "get_sample_partition_type");

@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  gizmo_3d_helper.h                                                     */
+/*  nav_area_3d.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,33 +28,84 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GIZMO_3D_HELPER_H
-#define GIZMO_3D_HELPER_H
+#ifndef NAV_AREA_3D_H
+#define NAV_AREA_3D_H
 
-#include "core/object/ref_counted.h"
+#include "../nav_rid.h"
+#include "../nav_utils.h"
 
-class Camera3D;
+#include "core/math/aabb.h"
+#include "core/os/rw_lock.h"
+#include "core/templates/self_list.h"
+#include "servers/navigation_server_3d.h"
 
-class Gizmo3DHelper : public RefCounted {
-	GDCLASS(Gizmo3DHelper, RefCounted);
+class NavMap;
 
-	int current_handle_id;
-	Variant initial_value;
-	Transform3D initial_transform;
+class NavArea3D : public NavRid {
+	RWLock area_rwlock;
+
+	NavMap *map = nullptr;
+
+	NavigationServer3D::AreaShapeType3D shape_type = NavigationServer3D::AreaShapeType3D::AREA_SHAPE_NONE;
+	bool enabled = true;
+	AABB bounds;
+
+	Vector3 position;
+	uint32_t navigation_layers = 1;
+	int priority = 0;
+	float height = 1.0;
+	ObjectID owner_id;
+
+	Vector3 size = Vector3(1.0, height, 1.0);
+	float radius = 1.0;
+	LocalVector<Vector3> vertices;
+
+	bool area_dirty = true;
+
+	//SelfList<NavArea3D> sync_dirty_request_list_element;
+
+private:
+	void _update_bounds();
 
 public:
-	void initialize_handle_action(const Variant &p_initial_value, const Transform3D &p_initial_transform);
-	void get_segment(Camera3D *p_camera, const Point2 &p_point, Vector3 *r_segment);
+	void set_shape_type(NavigationServer3D::AreaShapeType3D p_shape_type);
+	NavigationServer3D::AreaShapeType3D get_shape_type() const { return shape_type; }
 
-	Vector<Vector3> box_get_handles(const Vector3 &p_box_size);
-	String box_get_handle_name(int p_id) const;
-	void box_set_handle(const Vector3 p_segment[2], int p_id, Vector3 &r_box_size, Vector3 &r_box_position);
-	void box_commit_handle(const String &p_action_name, bool p_cancel, Object *p_position_object, Object *p_size_object = nullptr, const StringName &p_position_property = "global_position", const StringName &p_size_property = "size");
+	void set_enabled(bool p_enabled);
+	bool get_enabled() const { return enabled; }
 
-	Vector<Vector3> cylinder_get_handles(real_t p_height, real_t p_radius);
-	String cylinder_get_handle_name(int p_id) const;
-	void cylinder_set_handle(const Vector3 p_segment[2], int p_id, real_t &r_height, real_t &r_radius, Vector3 &r_cylinder_position);
-	void cylinder_commit_handle(int p_id, const String &p_radius_action_name, const String &p_height_action_name, bool p_cancel, Object *p_position_object, Object *p_height_object = nullptr, Object *p_radius_object = nullptr, const StringName &p_position_property = "global_position", const StringName &p_height_property = "height", const StringName &p_radius_property = "radius");
+	void set_map(NavMap *p_map);
+	NavMap *get_map() const { return map; }
+
+	void set_position(Vector3 p_position);
+	Vector3 get_position() const { return position; }
+
+	void set_height(float p_height);
+	float get_height() const { return height; }
+
+	void set_navigation_layers(uint32_t p_navigation_layers);
+	uint32_t get_navigation_layers() const { return navigation_layers; }
+
+	void set_priority(int p_priority);
+	int get_priority() const { return priority; }
+
+	void set_owner_id(ObjectID p_owner_id) { owner_id = p_owner_id; }
+	ObjectID get_owner_id() const { return owner_id; }
+
+	void set_size(Vector3 p_size);
+	Vector3 get_size() const { return size; }
+
+	void set_radius(float p_radius);
+	float get_radius() const { return radius; }
+
+	void set_vertices(const Vector<Vector3> &p_vertices);
+	const LocalVector<Vector3> &get_vertices() const { return vertices; }
+
+	AABB get_bounds() const { return bounds; }
+
+	bool sync();
+	void request_sync();
+	void cancel_sync_request();
 };
 
-#endif // GIZMO_3D_HELPER_H
+#endif // NAV_AREA_3D_H

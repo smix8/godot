@@ -35,6 +35,9 @@
 
 NavigationServer3D *NavigationServer3D::singleton = nullptr;
 
+LocalVector<float> NavigationServer3D::global_navigation_layers_cost_map = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+	1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+
 void NavigationServer3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_maps"), &NavigationServer3D::get_maps);
 
@@ -181,6 +184,40 @@ void NavigationServer3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("obstacle_set_avoidance_layers", "obstacle", "layers"), &NavigationServer3D::obstacle_set_avoidance_layers);
 	ClassDB::bind_method(D_METHOD("obstacle_get_avoidance_layers", "obstacle"), &NavigationServer3D::obstacle_get_avoidance_layers);
 
+	ClassDB::bind_method(D_METHOD("area_create"), &NavigationServer3D::area_create);
+	ClassDB::bind_method(D_METHOD("area_create_box", "position", "size", "navigation_layers", "priority"), &NavigationServer3D::area_create_box, DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("area_create_cylinder", "position", "radius", "height", "navigation_layers", "priority"), &NavigationServer3D::area_create_cylinder, DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("area_create_polygon", "position", "vertices", "height", "navigation_layers", "priority"), &NavigationServer3D::area_create_polygon, DEFVAL(0));
+
+	ClassDB::bind_method(D_METHOD("area_set_shape_type", "area", "shape_type"), &NavigationServer3D::area_set_shape_type);
+
+	ClassDB::bind_method(D_METHOD("area_set_map", "area", "map"), &NavigationServer3D::area_set_map);
+	ClassDB::bind_method(D_METHOD("area_get_map", "area"), &NavigationServer3D::area_get_map);
+
+	ClassDB::bind_method(D_METHOD("area_set_enabled", "area", "enabled"), &NavigationServer3D::area_set_enabled);
+	ClassDB::bind_method(D_METHOD("area_get_enabled", "area"), &NavigationServer3D::area_get_enabled);
+
+	ClassDB::bind_method(D_METHOD("area_set_position", "area", "position"), &NavigationServer3D::area_set_position);
+	ClassDB::bind_method(D_METHOD("area_get_position", "area"), &NavigationServer3D::area_get_position);
+
+	ClassDB::bind_method(D_METHOD("area_set_height", "area", "height"), &NavigationServer3D::area_set_height);
+	ClassDB::bind_method(D_METHOD("area_get_height", "area"), &NavigationServer3D::area_get_height);
+
+	ClassDB::bind_method(D_METHOD("area_set_navigation_layers", "area", "navigation_layers"), &NavigationServer3D::area_set_navigation_layers);
+	ClassDB::bind_method(D_METHOD("area_get_navigation_layers", "area"), &NavigationServer3D::area_get_navigation_layers);
+
+	ClassDB::bind_method(D_METHOD("area_set_priority", "area", "priority"), &NavigationServer3D::area_set_priority);
+	ClassDB::bind_method(D_METHOD("area_get_priority", "area"), &NavigationServer3D::area_get_priority);
+
+	ClassDB::bind_method(D_METHOD("area_get_bounds", "area"), &NavigationServer3D::area_get_bounds);
+
+	ClassDB::bind_method(D_METHOD("area_set_size", "area", "size"), &NavigationServer3D::area_set_size);
+	ClassDB::bind_method(D_METHOD("area_set_radius", "area", "radius"), &NavigationServer3D::area_set_radius);
+	ClassDB::bind_method(D_METHOD("area_set_vertices", "area", "vertices"), &NavigationServer3D::area_set_vertices);
+
+	ClassDB::bind_method(D_METHOD("area_set_owner_id", "area", "owner_id"), &NavigationServer3D::area_set_owner_id);
+	ClassDB::bind_method(D_METHOD("area_get_owner_id", "area"), &NavigationServer3D::area_get_owner_id);
+
 #ifndef _3D_DISABLED
 	ClassDB::bind_method(D_METHOD("parse_source_geometry_data", "navigation_mesh", "source_geometry_data", "root_node", "callback"), &NavigationServer3D::parse_source_geometry_data, DEFVAL(Callable()));
 	ClassDB::bind_method(D_METHOD("bake_from_source_geometry_data", "navigation_mesh", "source_geometry_data", "callback"), &NavigationServer3D::bake_from_source_geometry_data, DEFVAL(Callable()));
@@ -206,6 +243,11 @@ void NavigationServer3D::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("avoidance_debug_changed"));
 
 	ClassDB::bind_method(D_METHOD("get_process_info", "process_info"), &NavigationServer3D::get_process_info);
+
+	BIND_ENUM_CONSTANT(AREA_SHAPE_NONE);
+	BIND_ENUM_CONSTANT(AREA_SHAPE_BOX);
+	BIND_ENUM_CONSTANT(AREA_SHAPE_CYLINDER);
+	BIND_ENUM_CONSTANT(AREA_SHAPE_POLYGON);
 
 	BIND_ENUM_CONSTANT(INFO_ACTIVE_MAPS);
 	BIND_ENUM_CONSTANT(INFO_REGION_COUNT);
@@ -278,6 +320,9 @@ NavigationServer3D::NavigationServer3D() {
 	debug_navigation_avoidance_enable_obstacles_radius = GLOBAL_DEF("debug/shapes/avoidance/enable_obstacles_radius", true);
 	debug_navigation_avoidance_enable_obstacles_static = GLOBAL_DEF("debug/shapes/avoidance/enable_obstacles_static", true);
 
+	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &NavigationServer3D::_update_from_project_settings));
+	_update_from_project_settings();
+
 	if (Engine::get_singleton()->is_editor_hint()) {
 		// enable NavigationServer3D when in Editor or else navigation mesh edge connections are invisible
 		// on runtime tests SceneTree has "Visible Navigation" set and main iteration takes care of this
@@ -288,8 +333,32 @@ NavigationServer3D::NavigationServer3D() {
 #endif // DEBUG_ENABLED
 }
 
+void NavigationServer3D::global_set_navigation_layer_cost(int p_layer_number, float p_cost) {
+	ERR_FAIL_COND(p_layer_number < 1);
+	ERR_FAIL_COND(p_layer_number > 32);
+	global_navigation_layers_cost_map[p_layer_number - 1] = p_cost;
+}
+
+float NavigationServer3D::global_get_navigation_layer_cost(int p_layer_number) {
+	ERR_FAIL_COND_V(p_layer_number < 1, 1.0);
+	ERR_FAIL_COND_V(p_layer_number > 32, 1.0);
+	return global_navigation_layers_cost_map[p_layer_number - 1];
+}
+
 NavigationServer3D::~NavigationServer3D() {
 	singleton = nullptr;
+}
+
+void NavigationServer3D::_update_from_project_settings() {
+	DEV_ASSERT(global_navigation_layers_cost_map.size() == 32);
+
+	if (ProjectSettings::get_singleton()) {
+		for (uint32_t i = 0; i < 32; i++) {
+			if (ProjectSettings::get_singleton()->has_setting(vformat("%s/layer_%d_cost", PNAME("layer_names/3d_navigation"), i + 1))) {
+				global_navigation_layers_cost_map[i] = GLOBAL_GET(vformat("%s/layer_%d_cost", PNAME("layer_names/3d_navigation"), i + 1));
+			}
+		}
+	}
 }
 
 void NavigationServer3D::set_debug_enabled(bool p_enabled) {
@@ -605,6 +674,51 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_avoidance_stati
 
 	debug_navigation_avoidance_static_obstacle_pushout_edge_material = material;
 	return debug_navigation_avoidance_static_obstacle_pushout_edge_material;
+}
+
+Ref<StandardMaterial3D> NavigationServer3D::get_debug_area_edge_material() {
+	if (debug_area_edge_material.is_valid()) {
+		return debug_area_edge_material;
+	}
+
+	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+	material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
+	material->set_albedo(debug_area_edge_color);
+	//material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
+
+	debug_area_edge_material = material;
+	return debug_area_edge_material;
+}
+
+Ref<StandardMaterial3D> NavigationServer3D::get_debug_area_edge_disabled_material() {
+	if (debug_area_edge_disabled_material.is_valid()) {
+		return debug_area_edge_disabled_material;
+	}
+
+	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+	material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
+	material->set_albedo(debug_area_edge_disabled_color);
+	//material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
+
+	debug_area_edge_disabled_material = material;
+	return debug_area_edge_disabled_material;
+}
+
+Ref<StandardMaterial3D> NavigationServer3D::get_debug_area_edge_invalid_material() {
+	if (debug_area_edge_invalid_material.is_valid()) {
+		return debug_area_edge_invalid_material;
+	}
+
+	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+	material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
+	material->set_albedo(debug_area_edge_invalid_color);
+	//material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
+
+	debug_area_edge_invalid_material = material;
+	return debug_area_edge_invalid_material;
 }
 
 void NavigationServer3D::set_debug_navigation_edge_connection_color(const Color &p_color) {

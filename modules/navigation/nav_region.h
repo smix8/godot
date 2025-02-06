@@ -55,6 +55,7 @@ class NavRegion : public NavBase {
 	RWLock navmesh_rwlock;
 	Vector<Vector3> pending_navmesh_vertices;
 	Vector<Vector<int>> pending_navmesh_polygons;
+	Vector<uint32_t> pending_navmesh_polygons_meta;
 
 public:
 	NavRegion() {

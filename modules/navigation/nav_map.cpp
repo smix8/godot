@@ -30,6 +30,7 @@
 
 #include "nav_map.h"
 
+#include "3d/nav_area_3d.h"
 #include "nav_agent.h"
 #include "nav_link.h"
 #include "nav_obstacle.h"
@@ -250,6 +251,10 @@ Vector<Vector3> NavMap::get_path(Vector3 p_origin, Vector3 p_destination, bool p
 			// Iterate over connections in this edge, then compute the new optimized travel distance assigned to this polygon.
 			for (int connection_index = 0; connection_index < edge.connections.size(); connection_index++) {
 				const gd::Edge::Connection &connection = edge.connections[connection_index];
+
+				if ((p_navigation_layers & connection.polygon->navigation_layers) == 0) {
+					continue;
+				}
 
 				// Only consider the connection to another polygon if this polygon is in a region with compatible layers.
 				if ((p_navigation_layers & connection.polygon->owner->get_navigation_layers()) == 0) {
@@ -746,6 +751,19 @@ void NavMap::remove_link(NavLink *p_link) {
 	}
 }
 
+void NavMap::add_area(NavArea3D *p_area) {
+	areas.push_back(p_area);
+	regenerate_links = true;
+}
+
+void NavMap::remove_area(NavArea3D *p_area) {
+	int64_t area_index = areas.find(p_area);
+	if (area_index >= 0) {
+		areas.remove_at_unordered(area_index);
+		regenerate_links = true;
+	}
+}
+
 bool NavMap::has_agent(NavAgent *agent) const {
 	return agents.has(agent);
 }
@@ -904,6 +922,12 @@ void NavMap::sync() {
 	int _new_pm_edge_merge_count = pm_edge_merge_count;
 	int _new_pm_edge_connection_count = pm_edge_connection_count;
 	int _new_pm_edge_free_count = pm_edge_free_count;
+
+	for (NavArea3D  *area : areas) {
+		if (area->sync()) {
+			regenerate_links = true;
+		}
+	}
 
 	// Check if we need to update the links.
 	if (regenerate_polygons) {

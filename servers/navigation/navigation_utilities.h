@@ -33,6 +33,7 @@
 
 #include "core/math/vector3.h"
 #include "core/variant/typed_array.h"
+#include "servers/navigation/navigation_layers_cost_map.h"
 
 namespace NavigationUtilities {
 
@@ -68,6 +69,7 @@ struct PathQueryParameters {
 	BitField<PathMetadataFlags> metadata_flags = PATH_INCLUDE_ALL;
 	bool simplify_path = false;
 	real_t simplify_epsilon = 0.0;
+	Ref<NavigationLayersCostMap> navigation_layers_cost_map;
 };
 
 struct PathQueryResult {

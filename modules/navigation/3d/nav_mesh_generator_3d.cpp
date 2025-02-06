@@ -37,8 +37,10 @@
 #include "core/os/thread.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/multimesh_instance_3d.h"
+#include "scene/3d/navigation_mesh_area_3d.h"
 #include "scene/3d/navigation_obstacle_3d.h"
 #include "scene/3d/physics/static_body_3d.h"
+
 #include "scene/resources/3d/box_shape_3d.h"
 #include "scene/resources/3d/capsule_shape_3d.h"
 #include "scene/resources/3d/concave_polygon_shape_3d.h"
@@ -263,6 +265,7 @@ void NavMeshGenerator3D::generator_parse_geometry_node(const Ref<NavigationMesh>
 	generator_parse_gridmap_node(p_navigation_mesh, p_source_geometry_data, p_node);
 #endif
 	generator_parse_navigationobstacle_node(p_navigation_mesh, p_source_geometry_data, p_node);
+	generator_parse_navigationmesharea_node(p_navigation_mesh, p_source_geometry_data, p_node);
 
 	generator_rid_rwlock.read_lock();
 	for (const NavMeshGeometryParser3D *parser : generator_parsers) {
@@ -643,6 +646,98 @@ void NavMeshGenerator3D::generator_parse_navigationobstacle_node(const Ref<Navig
 	p_source_geometry_data->add_projected_obstruction(obstruction_shape_vertices, obstacle->get_global_position().y + p_source_geometry_data->root_node_transform.origin.y, obstacle->get_height(), obstacle->get_carve_navigation_mesh());
 }
 
+void NavMeshGenerator3D::generator_parse_navigationmesharea_node(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_node) {
+	NavigationMeshArea3D *area = Object::cast_to<NavigationMeshArea3D>(p_node);
+
+	if (area == nullptr) {
+		return;
+	}
+
+	if (!area->is_enabled()) {
+		return;
+	}
+
+	uint32_t area_navigation_layers = area->get_navigation_layers();
+	int area_priority = area->get_priority();
+
+	{
+		NavigationMeshAreaBox3D *node = Object::cast_to<NavigationMeshAreaBox3D>(p_node);
+		if (node) {
+			const Transform3D gt = p_source_geometry_data->root_node_transform * node->get_global_transform();
+
+			const Vector3 size = node->get_size();
+			const float height = node->get_height();
+
+			LocalVector<Vector3> b_vertices;
+			b_vertices.resize(4);
+			b_vertices[0] = Vector3(-size.x * 0.5, 0.0, -size.z * 0.5);
+			b_vertices[1] = Vector3(size.x * 0.5, 0.0, -size.z * 0.5);
+			b_vertices[2] = Vector3(size.x * 0.5, 0.0, size.z * 0.5);
+			b_vertices[3] = Vector3(-size.x * 0.5, 0.0, size.z * 0.5);
+
+			AABB area_bounds;
+			area_bounds.position = gt.xform(b_vertices[0]);
+
+			for (const Vector3 &vertex : b_vertices) {
+				area_bounds.expand_to(gt.xform(vertex));
+			}
+			const Vector3 height_offset = Vector3(0.0, height, 0.0);
+			for (const Vector3 &vertex : b_vertices) {
+				area_bounds.expand_to(gt.xform(vertex + height_offset));
+			}
+
+			p_source_geometry_data->add_projected_area_box(area_bounds, area_navigation_layers, area_priority);
+			return;
+		}
+	}
+
+	{
+		NavigationMeshAreaCylinder3D *node = Object::cast_to<NavigationMeshAreaCylinder3D>(p_node);
+		if (node) {
+			const Transform3D gt = p_source_geometry_data->root_node_transform * node->get_global_transform();
+			const Vector3 position = gt.origin;
+			Vector3 safe_scale = gt.basis.get_scale().abs().maxf(0.001);
+			if (safe_scale.x > safe_scale.z) {
+				safe_scale.z = safe_scale.x;
+			}
+			if (safe_scale.z > safe_scale.x) {
+				safe_scale.x = safe_scale.z;
+			}
+
+			p_source_geometry_data->add_projected_area_cylinder(position, safe_scale.x * node->get_radius(), safe_scale.y * node->get_height(), area_navigation_layers, area_priority);
+			return;
+		}
+	}
+
+	{
+		NavigationMeshAreaPolygon3D *node = Object::cast_to<NavigationMeshAreaPolygon3D>(p_node);
+		if (node) {
+			const float elevation = node->get_global_position().y + p_source_geometry_data->root_node_transform.origin.y;
+			const Vector3 safe_scale = node->get_global_basis().get_scale().abs().maxf(0.001);
+			const Transform3D node_xform = p_source_geometry_data->root_node_transform * Transform3D(Basis().scaled(safe_scale).rotated(Vector3(0.0, 1.0, 0.0), node->get_global_rotation().y), node->get_global_position());
+
+			const Vector<Vector3> &area_vertices = node->get_vertices();
+
+			if (area_vertices.is_empty()) {
+				return;
+			}
+
+			Vector<Vector3> xformed_area_vertices;
+			xformed_area_vertices.resize(area_vertices.size());
+
+			const Vector3 *area_vertices_ptr = area_vertices.ptr();
+			Vector3 *xformed_area_vertices_ptrw = xformed_area_vertices.ptrw();
+
+			for (int i = 0; i < area_vertices.size(); i++) {
+				xformed_area_vertices_ptrw[i] = node_xform.xform(area_vertices_ptr[i]);
+				xformed_area_vertices_ptrw[i].y = 0.0;
+			}
+			p_source_geometry_data->add_projected_area_polygon(xformed_area_vertices, elevation, safe_scale.y * node->get_height(), area_navigation_layers, area_priority);
+			return;
+		}
+	}
+}
+
 void NavMeshGenerator3D::generator_parse_source_geometry_data(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_root_node) {
 	List<Node *> parse_nodes;
 
@@ -675,11 +770,13 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(Ref<Navigation
 	Vector<float> source_geometry_vertices;
 	Vector<int> source_geometry_indices;
 	Vector<NavigationMeshSourceGeometryData3D::ProjectedObstruction> projected_obstructions;
+	Vector<NavigationMeshSourceGeometryData3D::ProjectedArea> projected_areas;
 
 	p_source_geometry_data->get_data(
 			source_geometry_vertices,
 			source_geometry_indices,
-			projected_obstructions);
+			projected_obstructions,
+			projected_areas);
 
 	if (source_geometry_vertices.size() < 3 || source_geometry_indices.size() < 3) {
 		return;
@@ -845,6 +942,89 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(Ref<Navigation
 
 	ERR_FAIL_COND(!rcErodeWalkableArea(&ctx, cfg.walkableRadius, *chf));
 
+	struct AreaPrioritySort {
+		bool operator()(const NavigationMeshSourceGeometryData3D::ProjectedArea &a, const NavigationMeshSourceGeometryData3D::ProjectedArea &b) const {
+			return a.priority < b.priority;
+		}
+	};
+
+	// Sort areas by priority so in case of area overlap low-priority areas apply
+	// to cells first and properties get overridden by high-priority areas later.
+	projected_areas.sort_custom<AreaPrioritySort>();
+
+	HashMap<uint32_t, uint32_t> navigation_layers_to_area_id;
+	HashMap<uint32_t, uint32_t> area_id_to_navigation_layers;
+
+	navigation_layers_to_area_id[0] = RC_NULL_AREA;
+	navigation_layers_to_area_id[1] = RC_WALKABLE_AREA;
+
+	area_id_to_navigation_layers[static_cast<uint32_t>(RC_NULL_AREA)] = 0;
+	area_id_to_navigation_layers[static_cast<uint32_t>(RC_WALKABLE_AREA)] = 1;
+
+	uint32_t next_free_area_id = 1;
+	uint32_t AREA_ID_MAX = RC_WALKABLE_AREA; // Recast unsigned char RC_WALKABLE_AREA = 63 is maximum allowed area id.
+
+	if (!projected_areas.is_empty()) {
+		for (const NavigationMeshSourceGeometryData3D::ProjectedArea &projected_area : projected_areas) {
+			uint32_t area_navigation_layers = projected_area.navigation_layers;
+
+			unsigned char recast_areaId = RC_WALKABLE_AREA;
+
+			HashMap<uint32_t, uint32_t>::Iterator existing_layer = navigation_layers_to_area_id.find(area_navigation_layers);
+			if (!existing_layer) {
+				uint32_t area_id = next_free_area_id;
+				if (area_id >= AREA_ID_MAX) {
+					ERR_PRINT("Navigation mesh area id limit reached. The excess area was ignored. Lower the number of unique 'navigation_layers' used by baked navigation mesh areas to stay below the limit of " + itos(AREA_ID_MAX) + " unique ids");
+					continue;
+				}
+
+				navigation_layers_to_area_id.insert(area_navigation_layers, area_id);
+				area_id_to_navigation_layers.insert(area_id, area_navigation_layers);
+
+				recast_areaId = static_cast<unsigned char>(area_id);
+
+				next_free_area_id++;
+
+			} else {
+				recast_areaId = static_cast<unsigned char>(existing_layer->value);
+			}
+
+			if (projected_area.shape_type == NavigationMeshSourceGeometryData3D::ProjectedArea::ShapeType::BOX) {
+				const Vector3 aabb_pos = projected_area.aabb.position;
+				const Vector3 aabb_end = projected_area.aabb.get_end();
+
+				const Vector<float> area_v_bmin = { float(aabb_pos.x), float(aabb_pos.y), float(aabb_pos.z) };
+				const Vector<float> area_v_bmax = { float(aabb_end.x), float(aabb_end.y), float(aabb_end.z) };
+
+				const float *area_bmin = area_v_bmin.ptr();
+				const float *area_bmax = area_v_bmax.ptr();
+
+				rcMarkBoxArea(&ctx, area_bmin, area_bmax, recast_areaId, *chf);
+
+			} else if (projected_area.shape_type == NavigationMeshSourceGeometryData3D::ProjectedArea::ShapeType::CYLINDER) {
+				const Vector<float> area_v_pos = { float(projected_area.position.x), float(projected_area.position.y), float(projected_area.position.z) };
+
+				const float *area_pos = area_v_pos.ptr();
+				const float area_r = projected_area.radius;
+				const float area_h = projected_area.height;
+
+				rcMarkCylinderArea(&ctx, area_pos, area_r, area_h, recast_areaId, *chf);
+
+			} else if (projected_area.shape_type == NavigationMeshSourceGeometryData3D::ProjectedArea::ShapeType::POLYGON) {
+				if (projected_area.vertices.is_empty() || projected_area.vertices.size() % 3 != 0) {
+					continue;
+				}
+
+				const float *area_verts = projected_area.vertices.ptr();
+				const int area_nverts = projected_area.vertices.size() / 3;
+				const float area_hmin = projected_area.elevation;
+				const float area_hmax = projected_area.elevation + projected_area.height;
+
+				rcMarkConvexPolyArea(&ctx, area_verts, area_nverts, area_hmin, area_hmax, recast_areaId, *chf);
+			}
+		}
+	}
+
 	// Carve obstacles to the eroded geometry. Those will NOT be affected by e.g. agent_radius because that step is already done.
 	if (!projected_obstructions.is_empty()) {
 		for (const NavigationMeshSourceGeometryData3D::ProjectedObstruction &projected_obstruction : projected_obstructions) {
@@ -897,6 +1077,12 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(Ref<Navigation
 
 	bake_state = "Converting to native navigation mesh..."; // step #10
 
+	//print_line("ReCast Details:");
+	//print_line(poly_mesh->npolys);
+	//print_line(detail_mesh->nmeshes);
+
+	Vector<uint32_t> nav_polygons_meta;
+
 	Vector<Vector3> nav_vertices;
 	Vector<Vector<int>> nav_polygons;
 
@@ -919,6 +1105,8 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(Ref<Navigation
 	}
 
 	for (int i = 0; i < detail_mesh->nmeshes; i++) {
+		uint32_t navigation_layers = area_id_to_navigation_layers[static_cast<uint32_t>(poly_mesh->areas[i])];
+
 		const unsigned int *detail_mesh_m = &detail_mesh->meshes[i * 4];
 		const unsigned int detail_mesh_bverts = detail_mesh_m[0];
 		const unsigned int detail_mesh_m_btris = detail_mesh_m[2];
@@ -937,10 +1125,19 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(Ref<Navigation
 			nav_indices.write[2] = recast_index_to_native_index[index3];
 
 			nav_polygons.push_back(nav_indices);
+			nav_polygons_meta.push_back(navigation_layers);
 		}
 	}
 
-	p_navigation_mesh->set_data(nav_vertices, nav_polygons);
+	p_navigation_mesh->set_data(nav_vertices, nav_polygons, nav_polygons_meta);
+	//print_line("Polygon Meta:");
+	//print_line(nav_polygons.size());
+	//print_line(nav_polygons_meta.size());
+	//print_line("Polygon Meta Detail:");
+	//for (uint32_t i = 0; i < nav_polygons_meta.size(); i++) {
+	//	print_line(nav_polygons_meta[i]);
+	//}
+	//p_navigation_mesh->set_polygon_meta(nav_polygons_meta);
 
 	bake_state = "Cleanup..."; // step #11
 

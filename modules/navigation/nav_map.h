@@ -46,6 +46,7 @@ class NavLink;
 class NavRegion;
 class NavAgent;
 class NavObstacle;
+class NavArea3D;
 
 class NavMap : public NavRid {
 	RWLock map_rwlock;
@@ -83,6 +84,8 @@ class NavMap : public NavRid {
 
 	/// Map polygons
 	LocalVector<gd::Polygon> polygons;
+
+	LocalVector<NavArea3D *> areas;
 
 	/// RVO avoidance worlds
 	RVO2D::RVOSimulator2D rvo_simulation_2d;
@@ -183,6 +186,10 @@ public:
 	const LocalVector<NavLink *> &get_links() const {
 		return links;
 	}
+
+	void add_area(NavArea3D *p_area);
+	void remove_area(NavArea3D *p_area);
+	const LocalVector<NavArea3D *> &get_areas() const { return areas; }
 
 	bool has_agent(NavAgent *agent) const;
 	void add_agent(NavAgent *agent);

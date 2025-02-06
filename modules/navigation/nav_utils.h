@@ -98,6 +98,8 @@ struct Edge {
 };
 
 struct Polygon {
+	uint32_t navigation_layers = 1;
+
 	/// Navigation region or link that contains this polygon.
 	const NavBase *owner = nullptr;
 
