@@ -254,8 +254,7 @@ void NavRegion2D::update_polygons() {
 			}
 
 			Vector2 point_position = transform.xform(vertices_r[idx]);
-			polygon.points[j].pos = point_position;
-			polygon.points[j].key = NavMapBuilder2D::get_point_key(point_position, map->get_merge_rasterizer_cell_size());
+			polygon.points[j] = point_position;
 
 			if (first_vertex) {
 				first_vertex = false;

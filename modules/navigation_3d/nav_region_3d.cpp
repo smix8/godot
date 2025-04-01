@@ -270,8 +270,7 @@ void NavRegion3D::update_polygons() {
 			}
 
 			Vector3 point_position = transform.xform(vertices_r[idx]);
-			polygon.points[j].pos = point_position;
-			polygon.points[j].key = NavMapBuilder3D::get_point_key(point_position, map->get_merge_rasterizer_cell_size());
+			polygon.points[j] = point_position;
 
 			if (first_vertex) {
 				first_vertex = false;
