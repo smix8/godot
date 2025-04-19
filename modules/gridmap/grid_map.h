@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "core/templates/a_hash_map.h"
 #include "scene/3d/node_3d.h"
 #include "scene/resources/3d/mesh_library.h"
 #include "scene/resources/multimesh.h"
@@ -128,7 +129,7 @@ class GridMap : public Node3D {
 
 		bool dirty = false;
 		RID static_body;
-		HashMap<IndexKey, NavigationCell> navigation_cell_ids;
+		AHashMap<IndexKey, NavigationCell> navigation_cell_ids;
 	};
 
 	union OctantKey {
@@ -175,8 +176,8 @@ class GridMap : public Node3D {
 
 	Ref<MeshLibrary> mesh_library;
 
-	HashMap<OctantKey, Octant *, OctantKey> octant_map;
-	HashMap<IndexKey, Cell, IndexKey> cell_map;
+	AHashMap<OctantKey, Octant *, OctantKey> octant_map;
+	AHashMap<IndexKey, Cell, IndexKey> cell_map;
 
 	void _recreate_octant_data();
 
