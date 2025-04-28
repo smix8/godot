@@ -50,6 +50,10 @@ void NavLink3D::set_map(NavMap3D *p_map) {
 		map->add_link(this);
 		request_sync();
 	}
+
+#ifdef DEBUG_ENABLED
+	debug->debug_update_scenario();
+#endif // DEBUG_ENABLED
 }
 
 void NavLink3D::set_enabled(bool p_enabled) {
@@ -62,6 +66,10 @@ void NavLink3D::set_enabled(bool p_enabled) {
 	link_dirty = true;
 
 	request_sync();
+
+#ifdef DEBUG_ENABLED
+	debug->debug_update_material();
+#endif // DEBUG_ENABLED
 }
 
 void NavLink3D::set_bidirectional(bool p_bidirectional) {
@@ -82,6 +90,10 @@ void NavLink3D::set_start_position(const Vector3 p_position) {
 	link_dirty = true;
 
 	request_sync();
+
+#ifdef DEBUG_ENABLED
+	debug->debug_update_mesh();
+#endif // DEBUG_ENABLED
 }
 
 void NavLink3D::set_end_position(const Vector3 p_position) {
@@ -92,6 +104,9 @@ void NavLink3D::set_end_position(const Vector3 p_position) {
 	link_dirty = true;
 
 	request_sync();
+#ifdef DEBUG_ENABLED
+	debug->debug_update_mesh();
+#endif // DEBUG_ENABLED
 }
 
 void NavLink3D::set_navigation_layers(uint32_t p_navigation_layers) {
@@ -159,10 +174,17 @@ void NavLink3D::cancel_sync_request() {
 NavLink3D::NavLink3D() :
 		sync_dirty_request_list_element(this) {
 	type = NavigationUtilities::PathSegmentType::PATH_SEGMENT_TYPE_LINK;
+
+#ifdef DEBUG_ENABLED
+	debug = memnew(NavLinkDebug3D(this));
+#endif
 }
 
 NavLink3D::~NavLink3D() {
 	cancel_sync_request();
+#ifdef DEBUG_ENABLED
+	memdelete(debug);
+#endif
 }
 
 void NavLink3D::get_iteration_update(NavLinkIteration3D &r_iteration) {

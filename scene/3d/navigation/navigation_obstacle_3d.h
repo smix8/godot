@@ -62,20 +62,6 @@ class NavigationObstacle3D : public Node3D {
 	bool affect_navigation_mesh = false;
 	bool carve_navigation_mesh = false;
 
-#ifdef DEBUG_ENABLED
-	RID fake_agent_radius_debug_instance_rid;
-	RID fake_agent_radius_debug_mesh_rid;
-
-	RID static_obstacle_debug_instance_rid;
-	RID static_obstacle_debug_mesh_rid;
-
-private:
-	void _update_debug();
-	void _update_fake_agent_radius_debug();
-	void _update_static_obstacle_debug();
-	void _clear_debug();
-#endif // DEBUG_ENABLED
-
 protected:
 	static void _bind_methods();
 	void _notification(int p_what);

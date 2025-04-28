@@ -67,6 +67,17 @@ using namespace Nav3D;
 	NavMapIterationRead3D iteration_read_lock(map_iteration);                       \
 	iteration_slot_rwlock.read_unlock();
 
+void NavMap3D::set_active(bool p_active) {
+	if (active == p_active) {
+		return;
+	}
+
+	active = p_active;
+#ifdef DEBUG_ENABLED
+	get_debug()->debug_make_dirty_all();
+#endif // DEBUG_ENABLED
+}
+
 void NavMap3D::set_up(Vector3 p_up) {
 	if (up == p_up) {
 		return;
@@ -450,6 +461,10 @@ void NavMap3D::_sync_iteration() {
 	iteration_slot_rwlock.write_unlock();
 
 	iteration_ready = false;
+
+#ifdef DEBUG_ENABLED
+	get_debug()->debug_make_dirty();
+#endif // DEBUG_ENABLED
 }
 
 void NavMap3D::sync() {
@@ -831,6 +846,12 @@ bool NavMap3D::get_use_async_iterations() const {
 	return use_async_iterations;
 }
 
+#ifdef DEBUG_ENABLED
+void NavMap3D::sync_debug() {
+	get_debug()->sync();
+}
+#endif // DEBUG_ENABLED
+
 NavMap3D::NavMap3D() {
 	avoidance_use_multiple_threads = GLOBAL_GET("navigation/avoidance/thread_model/avoidance_use_multiple_threads");
 	avoidance_use_high_priority_threads = GLOBAL_GET("navigation/avoidance/thread_model/avoidance_use_high_priority_threads");
@@ -863,6 +884,10 @@ NavMap3D::NavMap3D() {
 #else
 	use_async_iterations = false;
 #endif
+
+#ifdef DEBUG_ENABLED
+	debug = memnew(NavMapDebug3D(this));
+#endif
 }
 
 NavMap3D::~NavMap3D() {
@@ -870,4 +895,8 @@ NavMap3D::~NavMap3D() {
 		WorkerThreadPool::get_singleton()->wait_for_task_completion(iteration_build_thread_task_id);
 		iteration_build_thread_task_id = WorkerThreadPool::INVALID_TASK_ID;
 	}
+
+#ifdef DEBUG_ENABLED
+	memdelete(debug);
+#endif
 }

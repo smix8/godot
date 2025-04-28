@@ -40,7 +40,6 @@ class NavigationMesh : public Resource {
 
 	Vector<Vector3> vertices;
 	Vector<Vector<int>> polygons;
-	Ref<ArrayMesh> debug_mesh;
 
 protected:
 	static void _bind_methods();
@@ -198,10 +197,6 @@ public:
 
 	void set_data(const Vector<Vector3> &p_vertices, const Vector<Vector<int>> &p_polygons);
 	void get_data(Vector<Vector3> &r_vertices, Vector<Vector<int>> &r_polygons);
-
-#ifdef DEBUG_ENABLED
-	Ref<ArrayMesh> get_debug_mesh();
-#endif // DEBUG_ENABLED
 
 	NavigationMesh() {}
 	~NavigationMesh() {}

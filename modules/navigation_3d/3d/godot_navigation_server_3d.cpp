@@ -30,8 +30,10 @@
 
 #include "godot_navigation_server_3d.h"
 
+#include "core/config/project_settings.h"
 #include "core/os/mutex.h"
 #include "scene/main/node.h"
+#include "servers/navigation/navigation_debug_3d.h"
 
 #include "nav_mesh_generator_3d.h"
 
@@ -86,6 +88,10 @@ GodotNavigationServer3D::~GodotNavigationServer3D() {
 	flush_queries();
 }
 
+void GodotNavigationServer3D::project_settings_changed() {
+	debug_settings_dirty = true;
+}
+
 void GodotNavigationServer3D::add_command(SetCommand3D *command) {
 	MutexLock lock(commands_mutex);
 
@@ -117,6 +123,8 @@ RID GodotNavigationServer3D::map_create() {
 COMMAND_2(map_set_active, RID, p_map, bool, p_active) {
 	NavMap3D *map = map_owner.get_or_null(p_map);
 	ERR_FAIL_NULL(map);
+
+	map->set_active(p_active);
 
 	if (p_active) {
 		if (!map_is_active(p_map)) {
@@ -1350,6 +1358,29 @@ void GodotNavigationServer3D::process(double p_delta_time) {
 	// E.g. (final) sync of objects for this main loop iteration, updating rendered debug visuals, updating debug statistics, ...
 
 	sync();
+
+	if (!active) {
+		return;
+	}
+
+	if (project_settings_dirty) {
+		project_settings_dirty = false;
+		debug_settings_dirty = true;
+	}
+
+#ifdef DEBUG_ENABLED
+	if (debug_settings_dirty) {
+		debug_settings_dirty = false;
+		NavigationDebug3D::sync();
+		for (NavMap3D *map : active_maps) {
+			map->get_debug()->debug_settings_changed();
+		}
+	}
+
+	for (NavMap3D *map : active_maps) {
+		map->sync_debug();
+	}
+#endif // DEBUG_ENABLED
 }
 
 void GodotNavigationServer3D::physics_process(double p_delta_time) {
@@ -1405,18 +1436,28 @@ void GodotNavigationServer3D::physics_process(double p_delta_time) {
 }
 
 void GodotNavigationServer3D::init() {
+	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &GodotNavigationServer3D::project_settings_changed));
+
 	navmesh_generator_3d = memnew(NavMeshGenerator3D);
 	RWLockRead read_lock(geometry_parser_rwlock);
 	navmesh_generator_3d->set_generator_parsers(generator_parsers);
 }
 
 void GodotNavigationServer3D::finish() {
+	ProjectSettings::get_singleton()->disconnect("settings_changed", callable_mp(this, &GodotNavigationServer3D::project_settings_changed));
 	flush_queries();
+	set_active(false);
 	if (navmesh_generator_3d) {
 		navmesh_generator_3d->finish();
 		memdelete(navmesh_generator_3d);
 		navmesh_generator_3d = nullptr;
 	}
+
+#ifdef DEBUG_ENABLED
+	for (NavMap3D *map : active_maps) {
+		map->get_debug()->debug_free();
+	}
+#endif // DEBUG_ENABLED
 }
 
 void GodotNavigationServer3D::query_path(const Ref<NavigationPathQueryParameters3D> &p_query_parameters, Ref<NavigationPathQueryResult3D> p_query_result, const Callable &p_callback) {
@@ -1520,6 +1561,185 @@ int GodotNavigationServer3D::get_process_info(ProcessInfo p_info) const {
 
 	return 0;
 }
+
+////////////////////////////////
+// Debug Globals.
+#ifdef DEBUG_ENABLED
+void GodotNavigationServer3D::debug_global_set_enabled(bool p_enabled) {
+	if (debug_global_is_enabled() == p_enabled) {
+		return;
+	}
+
+	NavigationDebug3D::debug_global_set_enabled(p_enabled);
+
+	for (NavMap3D *map : active_maps) {
+		map->get_debug()->debug_settings_changed();
+	}
+}
+
+bool GodotNavigationServer3D::debug_global_is_enabled() const {
+	return NavigationDebug3D::debug_global_is_enabled();
+}
+
+void GodotNavigationServer3D::debug_global_set_navigation_enabled(bool p_enabled) {
+	if (debug_global_is_navigation_enabled() == p_enabled) {
+		return;
+	}
+
+	NavigationDebug3D::debug_global_set_avoidance_enabled(p_enabled);
+
+	debug_settings_dirty = true;
+}
+
+bool GodotNavigationServer3D::debug_global_is_navigation_enabled() const {
+	return NavigationDebug3D::debug_global_is_navigation_enabled();
+}
+
+void GodotNavigationServer3D::debug_global_set_avoidance_enabled(bool p_enabled) {
+	if (debug_global_is_avoidance_enabled() == p_enabled) {
+		return;
+	}
+
+	NavigationDebug3D::debug_global_set_avoidance_enabled(p_enabled);
+
+	debug_settings_dirty = true;
+}
+
+bool GodotNavigationServer3D::debug_global_is_avoidance_enabled() const {
+	return NavigationDebug3D::debug_global_is_avoidance_enabled();
+}
+
+void GodotNavigationServer3D::debug_global_set_maps_enabled(bool p_enabled) {
+	if (debug_global_are_maps_enabled() == p_enabled) {
+		return;
+	}
+
+	NavigationDebug3D::debug_global_set_maps_enabled(p_enabled);
+
+	debug_settings_dirty = true;
+}
+
+void GodotNavigationServer3D::debug_global_set_regions_enabled(bool p_enabled) {
+	if (debug_global_are_regions_enabled() == p_enabled) {
+		return;
+	}
+
+	NavigationDebug3D::debug_global_set_regions_enabled(p_enabled);
+
+	debug_settings_dirty = true;
+}
+
+void GodotNavigationServer3D::debug_global_set_links_enabled(bool p_enabled) {
+	if (debug_global_are_links_enabled() == p_enabled) {
+		return;
+	}
+
+	NavigationDebug3D::debug_global_set_links_enabled(p_enabled);
+
+	debug_settings_dirty = true;
+}
+
+void GodotNavigationServer3D::debug_global_set_obstacles_enabled(bool p_enabled) {
+	if (debug_global_are_obstacles_enabled() == p_enabled) {
+		return;
+	}
+
+	NavigationDebug3D::debug_global_set_obstacles_enabled(p_enabled);
+
+	debug_settings_dirty = true;
+}
+
+void GodotNavigationServer3D::debug_global_set_agents_enabled(bool p_enabled) {
+	if (debug_global_are_agents_enabled() == p_enabled) {
+		return;
+	}
+
+	NavigationDebug3D::debug_global_set_agents_enabled(p_enabled);
+
+	debug_settings_dirty = true;
+}
+
+bool GodotNavigationServer3D::debug_global_are_maps_enabled() const {
+	return NavigationDebug3D::debug_global_are_maps_enabled();
+}
+
+bool GodotNavigationServer3D::debug_global_are_regions_enabled() const {
+	return NavigationDebug3D::debug_global_are_regions_enabled();
+}
+
+bool GodotNavigationServer3D::debug_global_are_links_enabled() const {
+	return NavigationDebug3D::debug_global_are_links_enabled();
+}
+
+bool GodotNavigationServer3D::debug_global_are_obstacles_enabled() const {
+	return NavigationDebug3D::debug_global_are_obstacles_enabled();
+}
+
+bool GodotNavigationServer3D::debug_global_are_agents_enabled() const {
+	return NavigationDebug3D::debug_global_are_agents_enabled();
+}
+
+////////////////////////////////
+// Debug Maps.
+
+void GodotNavigationServer3D::debug_map_set_enabled(RID p_map, bool p_enabled) {
+	NavMap3D *map = map_owner.get_or_null(p_map);
+	ERR_FAIL_NULL(map);
+	map->get_debug()->debug_set_enabled(p_enabled);
+}
+
+void GodotNavigationServer3D::debug_map_set_canvas(RID p_map, RID p_canvas) {
+	NavMap3D *map = map_owner.get_or_null(p_map);
+	ERR_FAIL_NULL(map);
+	map->get_debug()->debug_set_canvas(p_canvas);
+}
+
+void GodotNavigationServer3D::debug_map_set_scenario(RID p_map, RID p_scenario) {
+	NavMap3D *map = map_owner.get_or_null(p_map);
+	ERR_FAIL_NULL(map);
+	map->get_debug()->debug_set_scenario(p_scenario);
+}
+
+////////////////////////////////
+// Debug Regions.
+
+void GodotNavigationServer3D::debug_region_set_enabled(RID p_region, bool p_enabled) {
+	NavRegion3D *region = region_owner.get_or_null(p_region);
+	ERR_FAIL_NULL(region);
+
+	region->get_debug()->debug_set_enabled(p_enabled);
+}
+
+////////////////////////////////
+// Debug Links.
+
+void GodotNavigationServer3D::debug_link_set_enabled(RID p_link, bool p_enabled) {
+	NavLink3D *link = link_owner.get_or_null(p_link);
+	ERR_FAIL_NULL(link);
+
+	link->get_debug()->debug_set_enabled(p_enabled);
+}
+
+////////////////////////////////
+// Debug Obstacles.
+
+void GodotNavigationServer3D::debug_obstacle_set_enabled(RID p_obstacle, bool p_enabled) {
+	NavObstacle3D *obstacle = obstacle_owner.get_or_null(p_obstacle);
+	ERR_FAIL_NULL(obstacle);
+
+	obstacle->get_debug()->debug_set_enabled(p_enabled);
+}
+
+////////////////////////////////
+// Debug Agents.
+
+void GodotNavigationServer3D::debug_agent_set_enabled(RID p_agent, bool p_enabled) {
+	NavAgent3D *agent = agent_owner.get_or_null(p_agent);
+	ERR_FAIL_NULL(agent);
+
+	agent->get_debug()->debug_set_enabled(p_enabled);
+}
+#endif // DEBUG_ENABLED
 
 #undef COMMAND_1
 #undef COMMAND_2

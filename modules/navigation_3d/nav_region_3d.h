@@ -36,9 +36,15 @@
 #include "core/os/rw_lock.h"
 #include "scene/resources/navigation_mesh.h"
 
+#ifdef DEBUG_ENABLED
+#include "debug_features/nav_region_debug_3d.h"
+#endif // DEBUG_ENABLED
+
 struct NavRegionIteration3D;
 
 class NavRegion3D : public NavBase3D {
+	friend class NavRegionDebug3D;
+
 	RWLock region_rwlock;
 
 	NavMap3D *map = nullptr;
@@ -56,12 +62,13 @@ class NavRegion3D : public NavBase3D {
 	AABB bounds;
 
 	RWLock navmesh_rwlock;
-	Vector<Vector3> pending_navmesh_vertices;
-	Vector<Vector<int>> pending_navmesh_polygons;
+	bool navmesh_data_dirty = false;
 
 	uint32_t iteration_id = 0;
 
 	SelfList<NavRegion3D> sync_dirty_request_list_element;
+
+	Ref<NavigationMesh> navigation_mesh;
 
 public:
 	NavRegion3D();
@@ -116,4 +123,12 @@ public:
 
 private:
 	void update_polygons();
+
+#ifdef DEBUG_ENABLED
+private:
+	NavRegionDebug3D *debug = nullptr;
+
+public:
+	NavRegionDebug3D *get_debug() { return debug; }
+#endif // DEBUG_ENABLED
 };

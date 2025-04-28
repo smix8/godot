@@ -69,8 +69,13 @@ RID World3D::get_navigation_map() const {
 		NavigationServer3D::get_singleton()->map_set_use_edge_connections(navigation_map, GLOBAL_GET("navigation/3d/use_edge_connections"));
 		NavigationServer3D::get_singleton()->map_set_edge_connection_margin(navigation_map, GLOBAL_GET("navigation/3d/default_edge_connection_margin"));
 		NavigationServer3D::get_singleton()->map_set_link_connection_radius(navigation_map, GLOBAL_GET("navigation/3d/default_link_connection_radius"));
+		NavigationServer3D::get_singleton()->debug_map_set_scenario(navigation_map, get_scenario());
 	}
 	return navigation_map;
+}
+
+bool World3D::has_navigation_map() const {
+	return !navigation_map.is_null();
 }
 
 RID World3D::get_scenario() const {

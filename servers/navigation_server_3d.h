@@ -35,6 +35,7 @@
 
 #include "scene/resources/3d/navigation_mesh_source_geometry_data_3d.h"
 #include "scene/resources/navigation_mesh.h"
+#include "servers/navigation/navigation_debug_3d.h"
 #include "servers/navigation/navigation_path_query_parameters_3d.h"
 #include "servers/navigation/navigation_path_query_result_3d.h"
 
@@ -392,8 +393,49 @@ public:
 
 	virtual int get_process_info(ProcessInfo p_info) const = 0;
 
+#ifndef DISABLE_DEPRECATED
 	void set_debug_enabled(bool p_enabled);
 	bool get_debug_enabled() const;
+#endif // DISABLE_DEPRECATED
+
+	// Debug Globals.
+	virtual void debug_global_set_enabled(bool p_enabled) = 0;
+	virtual bool debug_global_is_enabled() const = 0;
+
+	virtual void debug_global_set_navigation_enabled(bool p_enabled) = 0;
+	virtual bool debug_global_is_navigation_enabled() const = 0;
+
+	virtual void debug_global_set_avoidance_enabled(bool p_enabled) = 0;
+	virtual bool debug_global_is_avoidance_enabled() const = 0;
+
+	virtual void debug_global_set_maps_enabled(bool p_enabled) = 0;
+	virtual void debug_global_set_regions_enabled(bool p_enabled) = 0;
+	virtual void debug_global_set_links_enabled(bool p_enabled) = 0;
+	virtual void debug_global_set_obstacles_enabled(bool p_enabled) = 0;
+	virtual void debug_global_set_agents_enabled(bool p_enabled) = 0;
+
+	virtual bool debug_global_are_maps_enabled() const = 0;
+	virtual bool debug_global_are_regions_enabled() const = 0;
+	virtual bool debug_global_are_links_enabled() const = 0;
+	virtual bool debug_global_are_obstacles_enabled() const = 0;
+	virtual bool debug_global_are_agents_enabled() const = 0;
+
+	// Debug Maps.
+	virtual void debug_map_set_enabled(RID p_map, bool p_enabled) = 0;
+	virtual void debug_map_set_canvas(RID p_map, RID p_canvas) = 0;
+	virtual void debug_map_set_scenario(RID p_map, RID p_scenario) = 0;
+
+	// Debug Regions.
+	virtual void debug_region_set_enabled(RID p_region, bool p_enabled) = 0;
+
+	// Debug Links.
+	virtual void debug_link_set_enabled(RID p_link, bool p_enabled) = 0;
+
+	// Debug Obstacles.
+	virtual void debug_obstacle_set_enabled(RID p_obstacle, bool p_enabled) = 0;
+
+	// Debug Agents.
+	virtual void debug_agent_set_enabled(RID p_agent, bool p_enabled) = 0;
 
 protected:
 #ifndef DISABLE_DEPRECATED
@@ -401,179 +443,6 @@ protected:
 	void _query_path_bind_compat_100129(const Ref<NavigationPathQueryParameters3D> &p_query_parameters, Ref<NavigationPathQueryResult3D> p_query_result) const;
 	static void _bind_compatibility_methods();
 #endif
-
-private:
-	bool debug_enabled = false;
-
-#ifdef DEBUG_ENABLED
-	bool debug_dirty = true;
-
-	bool debug_navigation_enabled = false;
-	bool navigation_debug_dirty = true;
-	void _emit_navigation_debug_changed_signal();
-
-	bool debug_avoidance_enabled = false;
-	bool avoidance_debug_dirty = true;
-	void _emit_avoidance_debug_changed_signal();
-
-	Color debug_navigation_edge_connection_color = Color(1.0, 0.0, 1.0, 1.0);
-	Color debug_navigation_geometry_edge_color = Color(0.5, 1.0, 1.0, 1.0);
-	Color debug_navigation_geometry_face_color = Color(0.5, 1.0, 1.0, 0.4);
-	Color debug_navigation_geometry_edge_disabled_color = Color(0.5, 0.5, 0.5, 1.0);
-	Color debug_navigation_geometry_face_disabled_color = Color(0.5, 0.5, 0.5, 0.4);
-	Color debug_navigation_link_connection_color = Color(1.0, 0.5, 1.0, 1.0);
-	Color debug_navigation_link_connection_disabled_color = Color(0.5, 0.5, 0.5, 1.0);
-	Color debug_navigation_agent_path_color = Color(1.0, 0.0, 0.0, 1.0);
-
-	real_t debug_navigation_agent_path_point_size = 4.0;
-
-	Color debug_navigation_avoidance_agents_radius_color = Color(1.0, 1.0, 0.0, 0.25);
-	Color debug_navigation_avoidance_obstacles_radius_color = Color(1.0, 0.5, 0.0, 0.25);
-
-	Color debug_navigation_avoidance_static_obstacle_pushin_face_color = Color(1.0, 0.0, 0.0, 0.0);
-	Color debug_navigation_avoidance_static_obstacle_pushout_face_color = Color(1.0, 1.0, 0.0, 0.5);
-	Color debug_navigation_avoidance_static_obstacle_pushin_edge_color = Color(1.0, 0.0, 0.0, 1.0);
-	Color debug_navigation_avoidance_static_obstacle_pushout_edge_color = Color(1.0, 1.0, 0.0, 1.0);
-
-	bool debug_navigation_enable_edge_connections = true;
-	bool debug_navigation_enable_edge_connections_xray = true;
-	bool debug_navigation_enable_edge_lines = true;
-	bool debug_navigation_enable_edge_lines_xray = true;
-	bool debug_navigation_enable_geometry_face_random_color = true;
-	bool debug_navigation_enable_link_connections = true;
-	bool debug_navigation_enable_link_connections_xray = true;
-	bool debug_navigation_enable_agent_paths = true;
-	bool debug_navigation_enable_agent_paths_xray = true;
-
-	bool debug_navigation_avoidance_enable_agents_radius = true;
-	bool debug_navigation_avoidance_enable_obstacles_radius = true;
-	bool debug_navigation_avoidance_enable_obstacles_static = true;
-
-	Ref<StandardMaterial3D> debug_navigation_geometry_edge_material;
-	Ref<StandardMaterial3D> debug_navigation_geometry_face_material;
-	Ref<StandardMaterial3D> debug_navigation_geometry_edge_disabled_material;
-	Ref<StandardMaterial3D> debug_navigation_geometry_face_disabled_material;
-	Ref<StandardMaterial3D> debug_navigation_edge_connections_material;
-	Ref<StandardMaterial3D> debug_navigation_link_connections_material;
-	Ref<StandardMaterial3D> debug_navigation_link_connections_disabled_material;
-	Ref<StandardMaterial3D> debug_navigation_avoidance_agents_radius_material;
-	Ref<StandardMaterial3D> debug_navigation_avoidance_obstacles_radius_material;
-
-	Ref<StandardMaterial3D> debug_navigation_avoidance_static_obstacle_pushin_face_material;
-	Ref<StandardMaterial3D> debug_navigation_avoidance_static_obstacle_pushout_face_material;
-	Ref<StandardMaterial3D> debug_navigation_avoidance_static_obstacle_pushin_edge_material;
-	Ref<StandardMaterial3D> debug_navigation_avoidance_static_obstacle_pushout_edge_material;
-
-	Ref<StandardMaterial3D> debug_navigation_agent_path_line_material;
-	Ref<StandardMaterial3D> debug_navigation_agent_path_point_material;
-
-public:
-	void set_debug_navigation_enabled(bool p_enabled);
-	bool get_debug_navigation_enabled() const;
-
-	void set_debug_avoidance_enabled(bool p_enabled);
-	bool get_debug_avoidance_enabled() const;
-
-	void set_debug_navigation_edge_connection_color(const Color &p_color);
-	Color get_debug_navigation_edge_connection_color() const;
-
-	void set_debug_navigation_geometry_edge_color(const Color &p_color);
-	Color get_debug_navigation_geometry_edge_color() const;
-
-	void set_debug_navigation_geometry_face_color(const Color &p_color);
-	Color get_debug_navigation_geometry_face_color() const;
-
-	void set_debug_navigation_geometry_edge_disabled_color(const Color &p_color);
-	Color get_debug_navigation_geometry_edge_disabled_color() const;
-
-	void set_debug_navigation_geometry_face_disabled_color(const Color &p_color);
-	Color get_debug_navigation_geometry_face_disabled_color() const;
-
-	void set_debug_navigation_link_connection_color(const Color &p_color);
-	Color get_debug_navigation_link_connection_color() const;
-
-	void set_debug_navigation_link_connection_disabled_color(const Color &p_color);
-	Color get_debug_navigation_link_connection_disabled_color() const;
-
-	void set_debug_navigation_agent_path_color(const Color &p_color);
-	Color get_debug_navigation_agent_path_color() const;
-
-	void set_debug_navigation_avoidance_agents_radius_color(const Color &p_color);
-	Color get_debug_navigation_avoidance_agents_radius_color() const;
-
-	void set_debug_navigation_avoidance_obstacles_radius_color(const Color &p_color);
-	Color get_debug_navigation_avoidance_obstacles_radius_color() const;
-
-	void set_debug_navigation_avoidance_static_obstacle_pushin_face_color(const Color &p_color);
-	Color get_debug_navigation_avoidance_static_obstacle_pushin_face_color() const;
-
-	void set_debug_navigation_avoidance_static_obstacle_pushout_face_color(const Color &p_color);
-	Color get_debug_navigation_avoidance_static_obstacle_pushout_face_color() const;
-
-	void set_debug_navigation_avoidance_static_obstacle_pushin_edge_color(const Color &p_color);
-	Color get_debug_navigation_avoidance_static_obstacle_pushin_edge_color() const;
-
-	void set_debug_navigation_avoidance_static_obstacle_pushout_edge_color(const Color &p_color);
-	Color get_debug_navigation_avoidance_static_obstacle_pushout_edge_color() const;
-
-	void set_debug_navigation_enable_edge_connections(const bool p_value);
-	bool get_debug_navigation_enable_edge_connections() const;
-
-	void set_debug_navigation_enable_edge_connections_xray(const bool p_value);
-	bool get_debug_navigation_enable_edge_connections_xray() const;
-
-	void set_debug_navigation_enable_edge_lines(const bool p_value);
-	bool get_debug_navigation_enable_edge_lines() const;
-
-	void set_debug_navigation_enable_edge_lines_xray(const bool p_value);
-	bool get_debug_navigation_enable_edge_lines_xray() const;
-
-	void set_debug_navigation_enable_geometry_face_random_color(const bool p_value);
-	bool get_debug_navigation_enable_geometry_face_random_color() const;
-
-	void set_debug_navigation_enable_link_connections(const bool p_value);
-	bool get_debug_navigation_enable_link_connections() const;
-
-	void set_debug_navigation_enable_link_connections_xray(const bool p_value);
-	bool get_debug_navigation_enable_link_connections_xray() const;
-
-	void set_debug_navigation_enable_agent_paths(const bool p_value);
-	bool get_debug_navigation_enable_agent_paths() const;
-
-	void set_debug_navigation_enable_agent_paths_xray(const bool p_value);
-	bool get_debug_navigation_enable_agent_paths_xray() const;
-
-	void set_debug_navigation_agent_path_point_size(real_t p_point_size);
-	real_t get_debug_navigation_agent_path_point_size() const;
-
-	void set_debug_navigation_avoidance_enable_agents_radius(const bool p_value);
-	bool get_debug_navigation_avoidance_enable_agents_radius() const;
-
-	void set_debug_navigation_avoidance_enable_obstacles_radius(const bool p_value);
-	bool get_debug_navigation_avoidance_enable_obstacles_radius() const;
-
-	void set_debug_navigation_avoidance_enable_obstacles_static(const bool p_value);
-	bool get_debug_navigation_avoidance_enable_obstacles_static() const;
-
-	Ref<StandardMaterial3D> get_debug_navigation_geometry_face_material();
-	Ref<StandardMaterial3D> get_debug_navigation_geometry_edge_material();
-	Ref<StandardMaterial3D> get_debug_navigation_geometry_face_disabled_material();
-	Ref<StandardMaterial3D> get_debug_navigation_geometry_edge_disabled_material();
-	Ref<StandardMaterial3D> get_debug_navigation_edge_connections_material();
-	Ref<StandardMaterial3D> get_debug_navigation_link_connections_material();
-	Ref<StandardMaterial3D> get_debug_navigation_link_connections_disabled_material();
-
-	Ref<StandardMaterial3D> get_debug_navigation_agent_path_line_material();
-	Ref<StandardMaterial3D> get_debug_navigation_agent_path_point_material();
-
-	Ref<StandardMaterial3D> get_debug_navigation_avoidance_agents_radius_material();
-	Ref<StandardMaterial3D> get_debug_navigation_avoidance_obstacles_radius_material();
-
-	Ref<StandardMaterial3D> get_debug_navigation_avoidance_static_obstacle_pushin_face_material();
-	Ref<StandardMaterial3D> get_debug_navigation_avoidance_static_obstacle_pushout_face_material();
-	Ref<StandardMaterial3D> get_debug_navigation_avoidance_static_obstacle_pushin_edge_material();
-	Ref<StandardMaterial3D> get_debug_navigation_avoidance_static_obstacle_pushout_edge_material();
-#endif // DEBUG_ENABLED
 };
 
 typedef NavigationServer3D *(*NavigationServer3DCallback)();

@@ -39,6 +39,7 @@
 #include "scene/3d/navigation/navigation_obstacle_3d.h"
 #include "scene/gui/button.h"
 #include "scene/gui/dialogs.h"
+#include "servers/navigation/navigation_debug_3d.h"
 #include "servers/navigation_server_3d.h"
 
 bool NavigationObstacle3DGizmoPlugin::has_gizmo(Node3D *p_spatial) {
@@ -102,12 +103,10 @@ void NavigationObstacle3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		lines_mesh_vertices_ptrw[vertex_index++] = safe_global_basis.xform(Vector3(point.x, height, point.z));
 	}
 
-	NavigationServer3D *ns3d = NavigationServer3D::get_singleton();
-
 	if (obstacle->are_vertices_valid()) {
-		p_gizmo->add_lines(lines_mesh_vertices, ns3d->get_debug_navigation_avoidance_static_obstacle_pushout_edge_material());
+		p_gizmo->add_lines(lines_mesh_vertices, NavigationDebug3D::get_navobstacle_avoidance_static_pushout_edge_material());
 	} else {
-		p_gizmo->add_lines(lines_mesh_vertices, ns3d->get_debug_navigation_avoidance_static_obstacle_pushin_edge_material());
+		p_gizmo->add_lines(lines_mesh_vertices, NavigationDebug3D::get_navobstacle_avoidance_static_pushin_edge_material());
 	}
 	p_gizmo->add_collision_segments(lines_mesh_vertices);
 

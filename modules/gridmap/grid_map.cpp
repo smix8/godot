@@ -579,9 +579,6 @@ void GridMap::_octant_transform(const OctantKey &p_key) {
 			if (E.value.region.is_valid()) {
 				NavigationServer3D::get_singleton()->region_set_transform(E.value.region, get_global_transform() * E.value.xform);
 			}
-			if (E.value.navigation_mesh_debug_instance.is_valid()) {
-				RS::get_singleton()->instance_set_transform(E.value.navigation_mesh_debug_instance, get_global_transform() * E.value.xform);
-			}
 		}
 	}
 #endif // NAVIGATION_3D_DISABLED
@@ -614,10 +611,6 @@ bool GridMap::_octant_update(const OctantKey &p_key) {
 		if (E.value.region.is_valid()) {
 			NavigationServer3D::get_singleton()->free(E.value.region);
 			E.value.region = RID();
-		}
-		if (E.value.navigation_mesh_debug_instance.is_valid()) {
-			RS::get_singleton()->free(E.value.navigation_mesh_debug_instance);
-			E.value.navigation_mesh_debug_instance = RID();
 		}
 	}
 	g.navigation_cell_ids.clear();
@@ -729,33 +722,11 @@ bool GridMap::_octant_update(const OctantKey &p_key) {
 					}
 				}
 				nm.region = region;
-
-#ifdef DEBUG_ENABLED
-				// add navigation debugmesh visual instances if debug is enabled
-				SceneTree *st = SceneTree::get_singleton();
-				if (st && st->is_debugging_navigation_hint()) {
-					if (!nm.navigation_mesh_debug_instance.is_valid()) {
-						RID navigation_mesh_debug_rid = navigation_mesh->get_debug_mesh()->get_rid();
-						nm.navigation_mesh_debug_instance = RS::get_singleton()->instance_create();
-						RS::get_singleton()->instance_set_base(nm.navigation_mesh_debug_instance, navigation_mesh_debug_rid);
-					}
-					if (is_inside_tree()) {
-						RS::get_singleton()->instance_set_scenario(nm.navigation_mesh_debug_instance, scenario);
-						RS::get_singleton()->instance_set_transform(nm.navigation_mesh_debug_instance, get_global_transform() * nm.xform);
-					}
-				}
-#endif // DEBUG_ENABLED
 			}
 			g.navigation_cell_ids[E] = nm;
 		}
 #endif // NAVIGATION_3D_DISABLED
 	}
-
-#if defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
-	if (bake_navigation) {
-		_update_octant_navigation_debug_edge_connections_mesh(p_key);
-	}
-#endif // defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
 
 	//update multimeshes, only if not baked
 	if (baked_meshes.is_empty()) {
@@ -886,19 +857,6 @@ void GridMap::_octant_enter_world(const OctantKey &p_key) {
 				}
 			}
 		}
-
-#ifdef DEBUG_ENABLED
-		if (bake_navigation) {
-			if (!g.navigation_debug_edge_connections_instance.is_valid()) {
-				g.navigation_debug_edge_connections_instance = RenderingServer::get_singleton()->instance_create();
-			}
-			if (g.navigation_debug_edge_connections_mesh.is_null()) {
-				g.navigation_debug_edge_connections_mesh.instantiate();
-			}
-
-			_update_octant_navigation_debug_edge_connections_mesh(p_key);
-		}
-#endif // DEBUG_ENABLED
 	}
 #endif // NAVIGATION_3D_DISABLED
 }
@@ -934,24 +892,8 @@ void GridMap::_octant_exit_world(const OctantKey &p_key) {
 			NavigationServer3D::get_singleton()->free(F.value.region);
 			F.value.region = RID();
 		}
-		if (F.value.navigation_mesh_debug_instance.is_valid()) {
-			RS::get_singleton()->free(F.value.navigation_mesh_debug_instance);
-			F.value.navigation_mesh_debug_instance = RID();
-		}
 	}
 #endif // NAVIGATION_3D_DISABLED
-
-#ifdef DEBUG_ENABLED
-	if (bake_navigation) {
-		if (g.navigation_debug_edge_connections_instance.is_valid()) {
-			RenderingServer::get_singleton()->free(g.navigation_debug_edge_connections_instance);
-			g.navigation_debug_edge_connections_instance = RID();
-		}
-		if (g.navigation_debug_edge_connections_mesh.is_valid()) {
-			g.navigation_debug_edge_connections_mesh.unref();
-		}
-	}
-#endif // DEBUG_ENABLED
 }
 
 void GridMap::_octant_clean_up(const OctantKey &p_key) {
@@ -983,24 +925,9 @@ void GridMap::_octant_clean_up(const OctantKey &p_key) {
 		if (E.value.region.is_valid()) {
 			NavigationServer3D::get_singleton()->free(E.value.region);
 		}
-		if (E.value.navigation_mesh_debug_instance.is_valid()) {
-			RS::get_singleton()->free(E.value.navigation_mesh_debug_instance);
-		}
 	}
 	g.navigation_cell_ids.clear();
 #endif // NAVIGATION_3D_DISABLED
-
-#ifdef DEBUG_ENABLED
-	if (bake_navigation) {
-		if (g.navigation_debug_edge_connections_instance.is_valid()) {
-			RenderingServer::get_singleton()->free(g.navigation_debug_edge_connections_instance);
-			g.navigation_debug_edge_connections_instance = RID();
-		}
-		if (g.navigation_debug_edge_connections_mesh.is_valid()) {
-			g.navigation_debug_edge_connections_mesh.unref();
-		}
-	}
-#endif // DEBUG_ENABLED
 
 	//erase multimeshes
 
@@ -1027,11 +954,6 @@ void GridMap::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_ENTER_TREE: {
-#if defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
-			if (bake_navigation && NavigationServer3D::get_singleton()->get_debug_navigation_enabled()) {
-				_update_navigation_debug_edge_connections();
-			}
-#endif // defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
 			_update_visibility();
 		} break;
 
@@ -1443,10 +1365,6 @@ RID GridMap::get_bake_mesh_instance(int p_idx) {
 
 GridMap::GridMap() {
 	set_notify_transform(true);
-#if defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
-	NavigationServer3D::get_singleton()->connect("map_changed", callable_mp(this, &GridMap::_navigation_map_changed));
-	NavigationServer3D::get_singleton()->connect("navigation_debug_changed", callable_mp(this, &GridMap::_update_navigation_debug_edge_connections));
-#endif // defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
 }
 
 #ifndef NAVIGATION_3D_DISABLED
@@ -1591,126 +1509,6 @@ void GridMap::navmesh_parse_source_geometry(const Ref<NavigationMesh> &p_navigat
 }
 #endif // NAVIGATION_3D_DISABLED
 
-#if defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
-void GridMap::_update_navigation_debug_edge_connections() {
-	if (bake_navigation) {
-		for (const KeyValue<OctantKey, Octant *> &E : octant_map) {
-			_update_octant_navigation_debug_edge_connections_mesh(E.key);
-		}
-	}
-}
-
-void GridMap::_navigation_map_changed(RID p_map) {
-	if (bake_navigation && is_inside_tree() && p_map == get_world_3d()->get_navigation_map()) {
-		_update_navigation_debug_edge_connections();
-	}
-}
-#endif // defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
-
 GridMap::~GridMap() {
 	clear();
-#if defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
-	NavigationServer3D::get_singleton()->disconnect("map_changed", callable_mp(this, &GridMap::_navigation_map_changed));
-	NavigationServer3D::get_singleton()->disconnect("navigation_debug_changed", callable_mp(this, &GridMap::_update_navigation_debug_edge_connections));
-#endif // defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
 }
-
-#if defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
-void GridMap::_update_octant_navigation_debug_edge_connections_mesh(const OctantKey &p_key) {
-	ERR_FAIL_COND(!octant_map.has(p_key));
-	Octant &g = *octant_map[p_key];
-
-	if (!NavigationServer3D::get_singleton()->get_debug_navigation_enabled()) {
-		if (g.navigation_debug_edge_connections_instance.is_valid()) {
-			RS::get_singleton()->instance_set_visible(g.navigation_debug_edge_connections_instance, false);
-		}
-		return;
-	}
-
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	if (!bake_navigation) {
-		if (g.navigation_debug_edge_connections_instance.is_valid()) {
-			RS::get_singleton()->instance_set_visible(g.navigation_debug_edge_connections_instance, false);
-		}
-		return;
-	}
-
-	if (!g.navigation_debug_edge_connections_instance.is_valid()) {
-		g.navigation_debug_edge_connections_instance = RenderingServer::get_singleton()->instance_create();
-	}
-
-	if (g.navigation_debug_edge_connections_mesh.is_null()) {
-		g.navigation_debug_edge_connections_mesh.instantiate();
-	}
-
-	g.navigation_debug_edge_connections_mesh->clear_surfaces();
-
-	float edge_connection_margin = NavigationServer3D::get_singleton()->map_get_edge_connection_margin(get_world_3d()->get_navigation_map());
-	float half_edge_connection_margin = edge_connection_margin * 0.5;
-
-	Vector<Vector3> vertex_array;
-
-	for (KeyValue<IndexKey, Octant::NavigationCell> &F : g.navigation_cell_ids) {
-		if (cell_map.has(F.key) && F.value.region.is_valid()) {
-			int connections_count = NavigationServer3D::get_singleton()->region_get_connections_count(F.value.region);
-			if (connections_count == 0) {
-				continue;
-			}
-
-			for (int i = 0; i < connections_count; i++) {
-				Vector3 connection_pathway_start = NavigationServer3D::get_singleton()->region_get_connection_pathway_start(F.value.region, i);
-				Vector3 connection_pathway_end = NavigationServer3D::get_singleton()->region_get_connection_pathway_end(F.value.region, i);
-
-				Vector3 direction_start_end = connection_pathway_start.direction_to(connection_pathway_end);
-				Vector3 direction_end_start = connection_pathway_end.direction_to(connection_pathway_start);
-
-				Vector3 start_right_dir = direction_start_end.cross(Vector3(0, 1, 0));
-				Vector3 start_left_dir = -start_right_dir;
-
-				Vector3 end_right_dir = direction_end_start.cross(Vector3(0, 1, 0));
-				Vector3 end_left_dir = -end_right_dir;
-
-				Vector3 left_start_pos = connection_pathway_start + (start_left_dir * half_edge_connection_margin);
-				Vector3 right_start_pos = connection_pathway_start + (start_right_dir * half_edge_connection_margin);
-				Vector3 left_end_pos = connection_pathway_end + (end_right_dir * half_edge_connection_margin);
-				Vector3 right_end_pos = connection_pathway_end + (end_left_dir * half_edge_connection_margin);
-
-				vertex_array.push_back(right_end_pos);
-				vertex_array.push_back(left_start_pos);
-				vertex_array.push_back(right_start_pos);
-
-				vertex_array.push_back(left_end_pos);
-				vertex_array.push_back(right_end_pos);
-				vertex_array.push_back(right_start_pos);
-			}
-		}
-	}
-
-	if (vertex_array.is_empty()) {
-		return;
-	}
-
-	Ref<StandardMaterial3D> edge_connections_material = NavigationServer3D::get_singleton()->get_debug_navigation_edge_connections_material();
-
-	Array mesh_array;
-	mesh_array.resize(Mesh::ARRAY_MAX);
-	mesh_array[Mesh::ARRAY_VERTEX] = vertex_array;
-
-	g.navigation_debug_edge_connections_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, mesh_array);
-	g.navigation_debug_edge_connections_mesh->surface_set_material(0, edge_connections_material);
-
-	RS::get_singleton()->instance_set_base(g.navigation_debug_edge_connections_instance, g.navigation_debug_edge_connections_mesh->get_rid());
-	RS::get_singleton()->instance_set_visible(g.navigation_debug_edge_connections_instance, is_visible_in_tree());
-	if (is_inside_tree()) {
-		RS::get_singleton()->instance_set_scenario(g.navigation_debug_edge_connections_instance, get_world_3d()->get_scenario());
-	}
-
-	bool enable_edge_connections = NavigationServer3D::get_singleton()->get_debug_navigation_enable_edge_connections();
-	if (!enable_edge_connections) {
-		RS::get_singleton()->instance_set_visible(g.navigation_debug_edge_connections_instance, false);
-	}
-}
-#endif // defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)

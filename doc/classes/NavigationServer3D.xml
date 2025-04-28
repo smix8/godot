@@ -12,6 +12,23 @@
 		To use the collision avoidance system, you may use agents. You can set an agent's target velocity, then the servers will emit a callback with a modified velocity.
 		[b]Note:[/b] The collision avoidance system ignores regions. Using the modified velocity directly may move an agent outside of the traversable area. This is a limitation of the collision avoidance system, any more complex situation may require the use of the physics engine.
 		This server keeps tracks of any call and executes them during the sync phase. This means that you can request any change to the map, using any thread, without worrying.
+		The NavigationServer3D is responsible for rendering navigiation and avoidance related debug elements. Settings for the appearance of debug visuals can be found in the [ProjectSettings]. Debug can also be changed at runtime using the NavigationServer. At runtime the debug can be toggled globally, using [method debug_global_set_enabled]. By default all sub categories and object debug is enabled. To focus on what is important debug can also be toggled more specifically, either by category, object class or for each object individually. 
+		The debug is hierarchical with multiple layers that are all enabled by default. Disabling a specific object works always. For debug to show all the upper layers related to the object category need to be enabled. For example to show a region navmesh the global debug, navigation category debug and region class debug all need to be enabled as well as the specific region. To hide the specific region navmesh it is enough to disable just the region.
+		[b]Layer1 - Global Debug:[/b]
+		- [method NavigationServer3D.debug_global_set_enabled] toggles the entire debug globally (at runtime).
+		[b]Layer2 - Global Category specific:[/b]
+		- [method NavigationServer3D.debug_global_set_navigation_enabled] toggles the navigation and pathfinding related debug globally.
+		- [method NavigationServer3D.debug_global_set_avoidance_enabled] toggles the avoidance simulation related debug globally.
+		[b]Layer3 - Global Class specific:[/b]
+		- [method NavigationServer3D.debug_global_set_regions_enabled] toggles the debug for navigation regions globally.
+		- [method NavigationServer3D.debug_global_set_links_enabled_enabled] toggles the debug for navigation links globally.
+		- [method NavigationServer3D.debug_global_set_agents_enabled_enabled] toggles the debug for navigation agents globally.
+		- [method NavigationServer3D.debug_global_set_obstacles_enabled_enabled] toggles the debug for navigation obstacles globally.
+		[b]Layer4 - Object specific:[/b]
+		- [method NavigationServer3D.debug_region_set_enabled] toggles the debug for a specific navigation region.
+		- [method NavigationServer3D.debug_link_set_enabled] toggles the debug for a specific navigation link.
+		- [method NavigationServer3D.debug_agent_set_enabled] toggles the debug for a specific navigation agent.
+		- [method NavigationServer3D.debug_obstacle_set_enabled] toggles the debug for a specific navigation obstacle.
 	</description>
 	<tutorials>
 		<link title="Using NavigationServer">$DOCS_URL/tutorials/navigation/navigation_using_navigationservers.html</link>
@@ -314,6 +331,166 @@
 			<param index="2" name="callback" type="Callable" default="Callable()" />
 			<description>
 				Bakes the provided [param navigation_mesh] with the data from the provided [param source_geometry_data] as an async task running on a background thread. After the process is finished the optional [param callback] will be called.
+			</description>
+		</method>
+		<method name="debug_agent_set_enabled">
+			<return type="void" />
+			<param index="0" name="agent" type="RID" />
+			<param index="1" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], enables debug for the specified [param agent].
+			</description>
+		</method>
+		<method name="debug_global_are_agents_enabled" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if global debug for all navigation agents is enabled.
+			</description>
+		</method>
+		<method name="debug_global_are_links_enabled" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if global debug for all navigation links is enabled.
+			</description>
+		</method>
+		<method name="debug_global_are_maps_enabled" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if global debug for all navigation maps is enabled.
+			</description>
+		</method>
+		<method name="debug_global_are_obstacles_enabled" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if global debug for all navigation obstacles is enabled.
+			</description>
+		</method>
+		<method name="debug_global_are_regions_enabled" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if global debug for all navigation regions is enabled.
+			</description>
+		</method>
+		<method name="debug_global_is_avoidance_enabled" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if global debug for all avoidance simulation related objects is enabled.
+			</description>
+		</method>
+		<method name="debug_global_is_enabled" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if global debug is enabled.
+			</description>
+		</method>
+		<method name="debug_global_is_navigation_enabled" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if global debug for all navigation and pathfinding related objects is enabled.
+			</description>
+		</method>
+		<method name="debug_global_set_agents_enabled">
+			<return type="void" />
+			<param index="0" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], enables agent related debug elements globally.
+			</description>
+		</method>
+		<method name="debug_global_set_avoidance_enabled">
+			<return type="void" />
+			<param index="0" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], enables avoidance related debug elements globally.
+			</description>
+		</method>
+		<method name="debug_global_set_enabled">
+			<return type="void" />
+			<param index="0" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], the specified [param link] will contribute to its current navigation map.
+			</description>
+		</method>
+		<method name="debug_global_set_links_enabled">
+			<return type="void" />
+			<param index="0" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], enables global debug for all navigation links.
+			</description>
+		</method>
+		<method name="debug_global_set_maps_enabled">
+			<return type="void" />
+			<param index="0" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], enables global debug for all navigation maps.
+			</description>
+		</method>
+		<method name="debug_global_set_navigation_enabled">
+			<return type="void" />
+			<param index="0" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], enables global debug for all navigation and pathfinding related objects.
+			</description>
+		</method>
+		<method name="debug_global_set_obstacles_enabled">
+			<return type="void" />
+			<param index="0" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], enables global debug for all navigation obstacles.
+			</description>
+		</method>
+		<method name="debug_global_set_regions_enabled">
+			<return type="void" />
+			<param index="0" name="enabled" type="bool" />
+			<description>
+				Sets the debug rendering 2d [param canvas] for the specified [param map]. Can be used to control the [Viewport] that should render the 2d debug.
+			</description>
+		</method>
+		<method name="debug_link_set_enabled">
+			<return type="void" />
+			<param index="0" name="link" type="RID" />
+			<param index="1" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], enables debug for the specified [param link].
+			</description>
+		</method>
+		<method name="debug_map_set_canvas">
+			<return type="void" />
+			<param index="0" name="map" type="RID" />
+			<param index="1" name="canvas" type="RID" />
+			<description>
+				Sets the debug rendering 2d [param canvas] for the specified [param map]. Can be used to control the [Viewport] that should render the 2d debug.
+			</description>
+		</method>
+		<method name="debug_map_set_enabled">
+			<return type="void" />
+			<param index="0" name="map" type="RID" />
+			<param index="1" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], enables debug for the specified [param map].
+			</description>
+		</method>
+		<method name="debug_map_set_scenario">
+			<return type="void" />
+			<param index="0" name="map" type="RID" />
+			<param index="1" name="scenario" type="RID" />
+			<description>
+				Sets the debug rendering 3d [param scenario] for the specified [param map]. Can be used to control the [Viewport] that should render the 3d debug.
+			</description>
+		</method>
+		<method name="debug_obstacle_set_enabled">
+			<return type="void" />
+			<param index="0" name="obstacle" type="RID" />
+			<param index="1" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], enables debug for the specified [param obstacle].
+			</description>
+		</method>
+		<method name="debug_region_set_enabled">
+			<return type="void" />
+			<param index="0" name="region" type="RID" />
+			<param index="1" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], enables debug for the specified [param region].
 			</description>
 		</method>
 		<method name="free_rid">

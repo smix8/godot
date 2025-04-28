@@ -52,19 +52,6 @@ class NavigationRegion3D : public Node3D {
 
 	AABB bounds;
 
-#ifdef DEBUG_ENABLED
-	RID debug_instance;
-	RID debug_edge_connections_instance;
-	Ref<ArrayMesh> debug_mesh;
-	Ref<ArrayMesh> debug_edge_connections_mesh;
-
-private:
-	void _update_debug_mesh();
-	void _update_debug_edge_connections_mesh();
-	void _navigation_map_changed(RID p_map);
-	void _navigation_debug_changed();
-#endif // DEBUG_ENABLED
-
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();

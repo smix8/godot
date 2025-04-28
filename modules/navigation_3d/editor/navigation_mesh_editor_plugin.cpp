@@ -102,6 +102,8 @@ void NavigationMeshEditor::_clear_pressed() {
 	if (node) {
 		if (node->get_navigation_mesh().is_valid()) {
 			node->get_navigation_mesh()->clear();
+			// Set again to update debug and internals, not just gizmos.
+			node->set_navigation_mesh(node->get_navigation_mesh());
 		}
 	}
 

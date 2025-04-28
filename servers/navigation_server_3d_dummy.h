@@ -205,6 +205,47 @@ public:
 
 	int get_process_info(ProcessInfo p_info) const override { return 0; }
 
+#ifndef DISABLE_DEPRECATED
 	void set_debug_enabled(bool p_enabled) {}
 	bool get_debug_enabled() const { return false; }
+#endif // DISABLE_DEPRECATED
+
+	// Debug Globals.
+	void debug_global_set_enabled(bool p_enabled) override {}
+	bool debug_global_is_enabled() const override { return false; }
+
+	void debug_global_set_navigation_enabled(bool p_enabled) override {}
+	bool debug_global_is_navigation_enabled() const override { return false; }
+
+	void debug_global_set_avoidance_enabled(bool p_enabled) override {}
+	bool debug_global_is_avoidance_enabled() const override { return false; }
+
+	void debug_global_set_maps_enabled(bool p_enabled) override {}
+	void debug_global_set_regions_enabled(bool p_enabled) override {}
+	void debug_global_set_links_enabled(bool p_enabled) override {}
+	void debug_global_set_obstacles_enabled(bool p_enabled) override {}
+	void debug_global_set_agents_enabled(bool p_enabled) override {}
+
+	bool debug_global_are_maps_enabled() const override { return false; }
+	bool debug_global_are_regions_enabled() const override { return false; }
+	bool debug_global_are_links_enabled() const override { return false; }
+	bool debug_global_are_obstacles_enabled() const override { return false; }
+	bool debug_global_are_agents_enabled() const override { return false; }
+
+	// Debug Maps.
+	void debug_map_set_enabled(RID p_map, bool p_enabled) override {}
+	void debug_map_set_canvas(RID p_map, RID p_canvas) override {}
+	void debug_map_set_scenario(RID p_map, RID p_scenario) override {}
+
+	// Debug Regions.
+	void debug_region_set_enabled(RID p_region, bool p_enabled) override {}
+
+	// Debug Links.
+	void debug_link_set_enabled(RID p_link, bool p_enabled) override {}
+
+	// Debug Obstacles.
+	void debug_obstacle_set_enabled(RID p_obstacle, bool p_enabled) override {}
+
+	// Debug Agents.
+	void debug_agent_set_enabled(RID p_agent, bool p_enabled) override {}
 };

@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  nav_link_3d.h                                                         */
+/*  nav_obstacle_debug_3d.h                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,84 +30,46 @@
 
 #pragma once
 
-#include "3d/nav_base_iteration_3d.h"
-#include "nav_base_3d.h"
-#include "nav_utils_3d.h"
-
-#ifdef DEBUG_ENABLED
-#include "debug_features/nav_link_debug_3d.h"
-#endif // DEBUG_ENABLED
-
-struct NavLinkIteration3D : NavBaseIteration3D {
-	bool bidirectional = true;
-	Vector3 start_position;
-	Vector3 end_position;
-
-	Vector3 get_start_position() const { return start_position; }
-	Vector3 get_end_position() const { return end_position; }
-	bool is_bidirectional() const { return bidirectional; }
-};
-
+#include "core/object/class_db.h"
 #include "core/templates/self_list.h"
 
-class NavLink3D : public NavBase3D {
-	friend class NavLinkDebug3D;
+class NavObstacle3D;
 
-	NavMap3D *map = nullptr;
-	bool bidirectional = true;
-	Vector3 start_position;
-	Vector3 end_position;
-	bool enabled = true;
+class NavObstacleDebug3D {
+	NavObstacle3D *obstacle = nullptr;
 
-	bool link_dirty = true;
+	RID debug_mesh_rid;
+	RID debug_instance_rid;
+	RID debug_radius_mesh_rid;
+	RID debug_radius_instance_rid;
 
-	SelfList<NavLink3D> sync_dirty_request_list_element;
+	bool debug_enabled = true;
+	bool debug_scenario_dirty = false;
+	bool debug_transform_dirty = false;
+	bool debug_mesh_dirty = false;
+	bool debug_material_dirty = false;
+
+	SelfList<NavObstacleDebug3D> sync_dirty_request_list_element;
+
+	void _debug_update_scenario();
+	void _debug_update_transform();
+	void _debug_update_mesh();
+	void _debug_update_material();
 
 public:
-	NavLink3D();
-	~NavLink3D();
+	void debug_set_enabled(bool p_enabled);
+	void debug_update();
+	void debug_update_scenario();
+	void debug_update_transform();
+	void debug_update_mesh();
+	void debug_update_material();
+	void debug_make_dirty();
+	void debug_free();
 
-	void set_map(NavMap3D *p_map);
-	NavMap3D *get_map() const {
-		return map;
-	}
-
-	void set_enabled(bool p_enabled);
-	bool get_enabled() const { return enabled; }
-
-	void set_bidirectional(bool p_bidirectional);
-	bool is_bidirectional() const {
-		return bidirectional;
-	}
-
-	void set_start_position(Vector3 p_position);
-	Vector3 get_start_position() const {
-		return start_position;
-	}
-
-	void set_end_position(Vector3 p_position);
-	Vector3 get_end_position() const {
-		return end_position;
-	}
-
-	// NavBase properties.
-	virtual void set_navigation_layers(uint32_t p_navigation_layers) override;
-	virtual void set_enter_cost(real_t p_enter_cost) override;
-	virtual void set_travel_cost(real_t p_travel_cost) override;
-	virtual void set_owner_id(ObjectID p_owner_id) override;
-
-	bool is_dirty() const;
 	void sync();
 	void request_sync();
 	void cancel_sync_request();
 
-	void get_iteration_update(NavLinkIteration3D &r_iteration);
-
-#ifdef DEBUG_ENABLED
-private:
-	NavLinkDebug3D *debug = nullptr;
-
-public:
-	NavLinkDebug3D *get_debug() { return debug; }
-#endif // DEBUG_ENABLED
+	NavObstacleDebug3D(NavObstacle3D *p_obstacle);
+	~NavObstacleDebug3D();
 };

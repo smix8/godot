@@ -96,6 +96,9 @@ void NavObstacle3D::set_map(NavMap3D *p_map) {
 
 		request_sync();
 	}
+#ifdef DEBUG_ENABLED
+	debug->debug_update();
+#endif // DEBUG_ENABLED
 }
 
 void NavObstacle3D::set_position(const Vector3 p_position) {
@@ -111,6 +114,10 @@ void NavObstacle3D::set_position(const Vector3 p_position) {
 	}
 
 	request_sync();
+
+#ifdef DEBUG_ENABLED
+	debug->debug_update_transform();
+#endif // DEBUG_ENABLED
 }
 
 void NavObstacle3D::set_radius(real_t p_radius) {
@@ -123,6 +130,9 @@ void NavObstacle3D::set_radius(real_t p_radius) {
 	if (agent) {
 		agent->set_radius(radius);
 	}
+#ifdef DEBUG_ENABLED
+	debug->debug_update_mesh();
+#endif // DEBUG_ENABLED
 }
 
 void NavObstacle3D::set_height(const real_t p_height) {
@@ -138,6 +148,10 @@ void NavObstacle3D::set_height(const real_t p_height) {
 	}
 
 	request_sync();
+
+#ifdef DEBUG_ENABLED
+	debug->debug_update_mesh();
+#endif // DEBUG_ENABLED
 }
 
 void NavObstacle3D::set_velocity(const Vector3 p_velocity) {
@@ -157,6 +171,10 @@ void NavObstacle3D::set_vertices(const Vector<Vector3> &p_vertices) {
 	obstacle_dirty = true;
 
 	request_sync();
+
+#ifdef DEBUG_ENABLED
+	debug->debug_update_mesh();
+#endif // DEBUG_ENABLED
 }
 
 bool NavObstacle3D::is_map_changed() {
@@ -247,8 +265,15 @@ void NavObstacle3D::cancel_sync_request() {
 
 NavObstacle3D::NavObstacle3D() :
 		sync_dirty_request_list_element(this) {
+#ifdef DEBUG_ENABLED
+	debug = memnew(NavObstacleDebug3D(this));
+#endif
 }
 
 NavObstacle3D::~NavObstacle3D() {
 	cancel_sync_request();
+
+#ifdef DEBUG_ENABLED
+	memdelete(debug);
+#endif
 }

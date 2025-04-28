@@ -35,12 +35,18 @@
 #include "core/object/class_db.h"
 #include "core/templates/self_list.h"
 
+#ifdef DEBUG_ENABLED
+#include "debug_features/nav_agent_debug_3d.h"
+#endif // DEBUG_ENABLED
+
 #include <Agent2d.h>
 #include <Agent3d.h>
 
 class NavMap3D;
 
 class NavAgent3D : public NavRid3D {
+	friend class NavAgentDebug3D;
+
 	Vector3 position;
 	Vector3 target_position;
 	Vector3 velocity;
@@ -56,6 +62,8 @@ class NavAgent3D : public NavRid3D {
 	bool clamp_speed = true; // Experimental, clamps velocity to max_speed.
 
 	NavMap3D *map = nullptr;
+
+	Vector<Vector3> nav_path; // Temp dummy for debug API.
 
 	RVO2D::Agent2D rvo_agent_2d;
 	RVO3D::Agent3D rvo_agent_3d;
@@ -156,4 +164,12 @@ public:
 
 private:
 	void _update_rvo_agent_properties();
+
+#ifdef DEBUG_ENABLED
+private:
+	NavAgentDebug3D *debug = nullptr;
+
+public:
+	NavAgentDebug3D *get_debug() { return debug; }
+#endif // DEBUG_ENABLED
 };

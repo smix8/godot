@@ -39,6 +39,10 @@
 #include "core/object/worker_thread_pool.h"
 #include "servers/navigation/navigation_globals.h"
 
+#ifdef DEBUG_ENABLED
+#include "debug_features/nav_map_debug_3d.h"
+#endif // DEBUG_ENABLED
+
 #include <KdTree2d.h>
 #include <KdTree3d.h>
 #include <RVOSimulator2d.h>
@@ -50,6 +54,10 @@ class NavAgent3D;
 class NavObstacle3D;
 
 class NavMap3D : public NavRid3D {
+	friend class NavMapDebug3D;
+
+	bool active = false;
+
 	/// Map Up
 	Vector3 up = Vector3(0, 1, 0);
 
@@ -139,6 +147,9 @@ class NavMap3D : public NavRid3D {
 public:
 	NavMap3D();
 	~NavMap3D();
+
+	void set_active(bool p_active);
+	bool is_active() const { return active; }
 
 	uint32_t get_iteration_id() const { return iteration_id; }
 
@@ -265,4 +276,14 @@ private:
 	void _update_rvo_agents_tree_3d();
 
 	void _update_merge_rasterizer_cell_dimensions();
+
+#ifdef DEBUG_ENABLED
+private:
+	NavMapDebug3D *debug = nullptr;
+
+public:
+	void sync_debug();
+
+	NavMapDebug3D *get_debug() { return debug; }
+#endif // DEBUG_ENABLED
 };

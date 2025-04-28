@@ -47,13 +47,6 @@ class NavigationLink3D : public Node3D {
 
 	Transform3D current_global_transform;
 
-#ifdef DEBUG_ENABLED
-	RID debug_instance;
-	Ref<ArrayMesh> debug_mesh;
-
-	void _update_debug_mesh();
-#endif // DEBUG_ENABLED
-
 protected:
 	static void _bind_methods();
 	void _notification(int p_what);

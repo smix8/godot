@@ -81,6 +81,8 @@ env_navigation_3d.add_source_files(module_obj, "*.cpp")
 env_navigation_3d.add_source_files(module_obj, "3d/*.cpp")
 if env.editor_build:
     env_navigation_3d.add_source_files(module_obj, "editor/*.cpp")
+if env.debug_features:
+     env_navigation_3d.add_source_files(module_obj, "debug_features/*.cpp")
 env.modules_sources += module_obj
 
 # Needed to force rebuilding the module files when the thirdparty library is updated.

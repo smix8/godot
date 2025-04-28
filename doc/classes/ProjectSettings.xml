@@ -743,33 +743,6 @@
 		<member name="debug/shapes/avoidance/2d/obstacles_static_face_pushout_color" type="Color" setter="" getter="" default="Color(1, 1, 0, 0.5)">
 			Color of the static avoidance obstacles faces when their vertices are winded in order to push agents out, visible when "Visible Avoidance" is enabled in the Debug menu.
 		</member>
-		<member name="debug/shapes/avoidance/3d/agents_radius_color" type="Color" setter="" getter="" default="Color(1, 1, 0, 0.25)">
-			Color of the avoidance agents radius, visible when "Visible Avoidance" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/avoidance/3d/enable_agents_radius" type="bool" setter="" getter="" default="true">
-			If enabled, displays avoidance agents radius when "Visible Avoidance" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/avoidance/3d/enable_obstacles_radius" type="bool" setter="" getter="" default="true">
-			If enabled, displays avoidance obstacles radius when "Visible Avoidance" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/avoidance/3d/enable_obstacles_static" type="bool" setter="" getter="" default="true">
-			If enabled, displays static avoidance obstacles when "Visible Avoidance" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/avoidance/3d/obstacles_radius_color" type="Color" setter="" getter="" default="Color(1, 0.5, 0, 0.25)">
-			Color of the avoidance obstacles radius, visible when "Visible Avoidance" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/avoidance/3d/obstacles_static_edge_pushin_color" type="Color" setter="" getter="" default="Color(1, 0, 0, 1)">
-			Color of the static avoidance obstacles edges when their vertices are winded in order to push agents in, visible when "Visible Avoidance" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/avoidance/3d/obstacles_static_edge_pushout_color" type="Color" setter="" getter="" default="Color(1, 1, 0, 1)">
-			Color of the static avoidance obstacles edges when their vertices are winded in order to push agents out, visible when "Visible Avoidance" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/avoidance/3d/obstacles_static_face_pushin_color" type="Color" setter="" getter="" default="Color(1, 0, 0, 0)">
-			Color of the static avoidance obstacles faces when their vertices are winded in order to push agents in, visible when "Visible Avoidance" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/avoidance/3d/obstacles_static_face_pushout_color" type="Color" setter="" getter="" default="Color(1, 1, 0, 0.5)">
-			Color of the static avoidance obstacles faces when their vertices are winded in order to push agents out, visible when "Visible Avoidance" is enabled in the Debug menu.
-		</member>
 		<member name="debug/shapes/collision/contact_color" type="Color" setter="" getter="" default="Color(1, 0.2, 0.1, 0.8)">
 			Color of the contact points between collision shapes, visible when "Visible Collision Shapes" is enabled in the Debug menu.
 		</member>
@@ -822,60 +795,6 @@
 			Color to use to display navigation link connections, visible when "Visible Navigation" is enabled in the Debug menu.
 		</member>
 		<member name="debug/shapes/navigation/2d/link_connection_disabled_color" type="Color" setter="" getter="" default="Color(0.5, 0.5, 0.5, 1)">
-			Color to use to display disabled navigation link connections, visible when "Visible Navigation" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/navigation/3d/agent_path_color" type="Color" setter="" getter="" default="Color(1, 0, 0, 1)">
-			Color to display enabled navigation agent paths when an agent has debug enabled.
-		</member>
-		<member name="debug/shapes/navigation/3d/agent_path_point_size" type="float" setter="" getter="" default="4.0">
-			Rasterized size (pixel) used to render navigation agent path points when an agent has debug enabled.
-		</member>
-		<member name="debug/shapes/navigation/3d/edge_connection_color" type="Color" setter="" getter="" default="Color(1, 0, 1, 1)">
-			Color to display edge connections between navigation regions, visible when "Visible Navigation" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/navigation/3d/enable_agent_paths" type="bool" setter="" getter="" default="true">
-			If enabled, displays navigation agent paths when an agent has debug enabled.
-		</member>
-		<member name="debug/shapes/navigation/3d/enable_agent_paths_xray" type="bool" setter="" getter="" default="true">
-			If enabled, displays navigation agent paths through geometry when an agent has debug enabled.
-		</member>
-		<member name="debug/shapes/navigation/3d/enable_edge_connections" type="bool" setter="" getter="" default="true">
-			If enabled, displays edge connections between navigation regions when "Visible Navigation" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/navigation/3d/enable_edge_connections_xray" type="bool" setter="" getter="" default="true">
-			If enabled, displays edge connections between navigation regions through geometry when "Visible Navigation" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/navigation/3d/enable_edge_lines" type="bool" setter="" getter="" default="true">
-			If enabled, displays navigation mesh polygon edges when "Visible Navigation" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/navigation/3d/enable_edge_lines_xray" type="bool" setter="" getter="" default="true">
-			If enabled, displays navigation mesh polygon edges through geometry when "Visible Navigation" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/navigation/3d/enable_geometry_face_random_color" type="bool" setter="" getter="" default="true">
-			If enabled, colorizes each navigation mesh polygon face with a random color when "Visible Navigation" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/navigation/3d/enable_link_connections" type="bool" setter="" getter="" default="true">
-			If enabled, displays navigation link connections when "Visible Navigation" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/navigation/3d/enable_link_connections_xray" type="bool" setter="" getter="" default="true">
-			If enabled, displays navigation link connections through geometry when "Visible Navigation" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/navigation/3d/geometry_edge_color" type="Color" setter="" getter="" default="Color(0.5, 1, 1, 1)">
-			Color to display enabled navigation mesh polygon edges, visible when "Visible Navigation" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/navigation/3d/geometry_edge_disabled_color" type="Color" setter="" getter="" default="Color(0.5, 0.5, 0.5, 1)">
-			Color to display disabled navigation mesh polygon edges, visible when "Visible Navigation" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/navigation/3d/geometry_face_color" type="Color" setter="" getter="" default="Color(0.5, 1, 1, 0.4)">
-			Color to display enabled navigation mesh polygon faces, visible when "Visible Navigation" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/navigation/3d/geometry_face_disabled_color" type="Color" setter="" getter="" default="Color(0.5, 0.5, 0.5, 0.4)">
-			Color to display disabled navigation mesh polygon faces, visible when "Visible Navigation" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/navigation/3d/link_connection_color" type="Color" setter="" getter="" default="Color(1, 0.5, 1, 1)">
-			Color to use to display navigation link connections, visible when "Visible Navigation" is enabled in the Debug menu.
-		</member>
-		<member name="debug/shapes/navigation/3d/link_connection_disabled_color" type="Color" setter="" getter="" default="Color(0.5, 0.5, 0.5, 1)">
 			Color to use to display disabled navigation link connections, visible when "Visible Navigation" is enabled in the Debug menu.
 		</member>
 		<member name="debug/shapes/paths/geometry_color" type="Color" setter="" getter="" default="Color(0.1, 1, 0.7, 0.4)">
@@ -2275,6 +2194,87 @@
 		</member>
 		<member name="navigation/2d/use_edge_connections" type="bool" setter="" getter="" default="true">
 			If enabled 2D navigation regions will use edge connections to connect with other navigation regions within proximity of the navigation map edge connection margin. This setting only affects World2D default navigation maps.
+		</member>
+		<member name="navigation/3d/debug/agents/enable_paths" type="bool" setter="" getter="" default="true">
+			If enabled, displays navigation agent paths when an agent has debug enabled.
+		</member>
+		<member name="navigation/3d/debug/agents/enable_paths_xray" type="bool" setter="" getter="" default="true">
+			If enabled, displays navigation agent paths through geometry when an agent has debug enabled.
+		</member>
+		<member name="navigation/3d/debug/agents/enable_radius" type="bool" setter="" getter="" default="true">
+			If enabled, displays avoidance agents radius when "Visible Avoidance" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/agents/path_color" type="Color" setter="" getter="" default="Color(1, 0, 0, 1)">
+			Color to display enabled navigation agent paths when an agent has debug enabled.
+		</member>
+		<member name="navigation/3d/debug/agents/path_point_size" type="float" setter="" getter="" default="4.0">
+			Rasterized size (pixel) used to render navigation agent path points when an agent has debug enabled.
+		</member>
+		<member name="navigation/3d/debug/agents/radius_color" type="Color" setter="" getter="" default="Color(1, 1, 0, 0.25)">
+			Color of the avoidance agents radius, visible when "Visible Avoidance" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/links/connection_color" type="Color" setter="" getter="" default="Color(1, 0.5, 1, 1)">
+			Color to use to display navigation link connections, visible when "Visible Navigation" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/links/connection_disabled_color" type="Color" setter="" getter="" default="Color(0.5, 0.5, 0.5, 1)">
+			Color to use to display disabled navigation link connections, visible when "Visible Navigation" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/links/enable_connections" type="bool" setter="" getter="" default="true">
+			If enabled, displays navigation link connections when "Visible Navigation" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/links/enable_connections_xray" type="bool" setter="" getter="" default="true">
+			If enabled, displays navigation link connections through geometry when "Visible Navigation" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/navmesh/edge_connection_color" type="Color" setter="" getter="" default="Color(1, 0, 1, 1)">
+			Color to display edge connections between navigation regions, visible when "Visible Navigation" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/navmesh/enable_edge_connections" type="bool" setter="" getter="" default="true">
+			If enabled, displays edge connections between navigation regions when "Visible Navigation" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/navmesh/enable_edge_connections_xray" type="bool" setter="" getter="" default="true">
+			If enabled, displays edge connections between navigation regions through geometry when "Visible Navigation" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/navmesh/enable_edge_lines" type="bool" setter="" getter="" default="true">
+			If enabled, displays navigation mesh polygon edges when "Visible Navigation" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/navmesh/enable_edge_lines_xray" type="bool" setter="" getter="" default="true">
+			If enabled, displays navigation mesh polygon edges through geometry when "Visible Navigation" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/navmesh/enable_geometry_face_random_color" type="bool" setter="" getter="" default="true">
+			If enabled, colorizes each navigation mesh polygon face with a random color when "Visible Navigation" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/navmesh/geometry_edge_color" type="Color" setter="" getter="" default="Color(0.5, 1, 1, 1)">
+			Color to display enabled navigation mesh polygon edges, visible when "Visible Navigation" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/navmesh/geometry_edge_disabled_color" type="Color" setter="" getter="" default="Color(0.5, 0.5, 0.5, 1)">
+			Color to display disabled navigation mesh polygon edges, visible when "Visible Navigation" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/navmesh/geometry_face_color" type="Color" setter="" getter="" default="Color(0.5, 1, 1, 0.4)">
+			Color to display enabled navigation mesh polygon faces, visible when "Visible Navigation" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/navmesh/geometry_face_disabled_color" type="Color" setter="" getter="" default="Color(0.5, 0.5, 0.5, 0.4)">
+			Color to display disabled navigation mesh polygon faces, visible when "Visible Navigation" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/obstacles/enable_radius" type="bool" setter="" getter="" default="true">
+			If enabled, displays avoidance obstacles radius when "Visible Avoidance" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/obstacles/enable_static" type="bool" setter="" getter="" default="true">
+			If enabled, displays static avoidance obstacles when "Visible Avoidance" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/obstacles/radius_color" type="Color" setter="" getter="" default="Color(1, 0.5, 0, 0.25)">
+			Color of the avoidance obstacles radius, visible when "Visible Avoidance" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/obstacles/static_edge_pushin_color" type="Color" setter="" getter="" default="Color(1, 0, 0, 1)">
+			Color of the static avoidance obstacles edges when their vertices are winded in order to push agents in, visible when "Visible Avoidance" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/obstacles/static_edge_pushout_color" type="Color" setter="" getter="" default="Color(1, 1, 0, 1)">
+			Color of the static avoidance obstacles edges when their vertices are winded in order to push agents out, visible when "Visible Avoidance" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/obstacles/static_face_pushin_color" type="Color" setter="" getter="" default="Color(1, 0, 0, 0)">
+			Color of the static avoidance obstacles faces when their vertices are winded in order to push agents in, visible when "Visible Avoidance" is enabled in the Debug menu.
+		</member>
+		<member name="navigation/3d/debug/obstacles/static_face_pushout_color" type="Color" setter="" getter="" default="Color(1, 1, 0, 0.5)">
+			Color of the static avoidance obstacles faces when their vertices are winded in order to push agents out, visible when "Visible Avoidance" is enabled in the Debug menu.
 		</member>
 		<member name="navigation/3d/default_cell_height" type="float" setter="" getter="" default="0.25">
 			Default cell height for 3D navigation maps. See [method NavigationServer3D.map_set_cell_height].

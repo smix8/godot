@@ -837,6 +837,16 @@ void Main::test_cleanup() {
 	ResourceSaver::remove_custom_savers();
 	PropertyListHelper::clear_base_helpers();
 
+	// Need to clear debug visuals before last RenderingServer flush.
+#ifndef NAVIGATION_2D_DISABLED
+	NavigationServer2DManager::finalize_server();
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+	NavigationServer3DManager::finalize_server();
+#endif // NAVIGATION_3D_DISABLED
+
+	RenderingServer::get_singleton()->sync();
+
 #ifdef TOOLS_ENABLED
 	GDExtensionManager::get_singleton()->deinitialize_extensions(GDExtension::INITIALIZATION_LEVEL_EDITOR);
 	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_EDITOR);
@@ -851,13 +861,6 @@ void Main::test_cleanup() {
 	unregister_scene_types();
 
 	finalize_theme_db();
-
-#ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2DManager::finalize_server();
-#endif // NAVIGATION_2D_DISABLED
-#ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3DManager::finalize_server();
-#endif // NAVIGATION_3D_DISABLED
 
 	GDExtensionManager::get_singleton()->deinitialize_extensions(GDExtension::INITIALIZATION_LEVEL_SERVERS);
 	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_SERVERS);
@@ -4174,7 +4177,7 @@ int Main::start() {
 			NavigationServer2D::get_singleton()->set_debug_navigation_enabled(true);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
-			NavigationServer3D::get_singleton()->set_debug_navigation_enabled(true);
+			NavigationServer3D::get_singleton()->debug_global_set_navigation_enabled(true);
 #endif // NAVIGATION_3D_DISABLED
 		}
 		if (debug_avoidance) {
@@ -4182,7 +4185,7 @@ int Main::start() {
 			NavigationServer2D::get_singleton()->set_debug_avoidance_enabled(true);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
-			NavigationServer3D::get_singleton()->set_debug_avoidance_enabled(true);
+			NavigationServer3D::get_singleton()->debug_global_set_avoidance_enabled(true);
 #endif // NAVIGATION_3D_DISABLED
 		}
 		if (debug_navigation || debug_avoidance) {
@@ -4192,7 +4195,7 @@ int Main::start() {
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
 			NavigationServer3D::get_singleton()->set_active(true);
-			NavigationServer3D::get_singleton()->set_debug_enabled(true);
+			NavigationServer3D::get_singleton()->debug_global_set_enabled(true);
 #endif // NAVIGATION_3D_DISABLED
 		}
 		if (debug_canvas_item_redraw) {
@@ -4918,6 +4921,14 @@ void Main::cleanup(bool p_force) {
 
 	ScriptServer::finish_languages();
 
+	// Need to clear debug visuals before last RenderingServer flush.
+#ifndef NAVIGATION_2D_DISABLED
+	NavigationServer2DManager::finalize_server();
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+	NavigationServer3DManager::finalize_server();
+#endif // NAVIGATION_3D_DISABLED
+
 	// Sync pending commands that may have been queued from a different thread during ScriptServer finalization
 	RenderingServer::get_singleton()->sync();
 
@@ -4950,13 +4961,7 @@ void Main::cleanup(bool p_force) {
 
 	finalize_theme_db();
 
-// Before deinitializing server extensions, finalize servers which may be loaded as extensions.
-#ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2DManager::finalize_server();
-#endif // NAVIGATION_2D_DISABLED
-#ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3DManager::finalize_server();
-#endif // NAVIGATION_3D_DISABLED
+	// Before deinitializing server extensions, finalize servers which may be loaded as extensions.
 	finalize_physics();
 
 	GDExtensionManager::get_singleton()->deinitialize_extensions(GDExtension::INITIALIZATION_LEVEL_SERVERS);

@@ -110,6 +110,10 @@ void NavAgent3D::set_map(NavMap3D *p_map) {
 
 		request_sync();
 	}
+
+#ifdef DEBUG_ENABLED
+	debug->debug_update_scenario();
+#endif // DEBUG_ENABLED
 }
 
 bool NavAgent3D::is_map_changed() {
@@ -418,8 +422,15 @@ void NavAgent3D::cancel_sync_request() {
 
 NavAgent3D::NavAgent3D() :
 		sync_dirty_request_list_element(this) {
+
+#ifdef DEBUG_ENABLED
+	debug = memnew(NavAgentDebug3D(this));
+#endif
 }
 
 NavAgent3D::~NavAgent3D() {
 	cancel_sync_request();
+#ifdef DEBUG_ENABLED
+	memdelete(debug);
+#endif
 }

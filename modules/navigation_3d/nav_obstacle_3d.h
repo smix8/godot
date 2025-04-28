@@ -35,10 +35,16 @@
 #include "core/object/class_db.h"
 #include "core/templates/self_list.h"
 
+#ifdef DEBUG_ENABLED
+#include "debug_features/nav_obstacle_debug_3d.h"
+#endif // DEBUG_ENABLED
+
 class NavAgent3D;
 class NavMap3D;
 
 class NavObstacle3D : public NavRid3D {
+	friend class NavObstacleDebug3D;
+
 	NavAgent3D *agent = nullptr;
 	NavMap3D *map = nullptr;
 	Vector3 velocity;
@@ -105,4 +111,12 @@ public:
 
 private:
 	void internal_update_agent();
+
+#ifdef DEBUG_ENABLED
+private:
+	NavObstacleDebug3D *debug = nullptr;
+
+public:
+	NavObstacleDebug3D *get_debug() { return debug; }
+#endif // DEBUG_ENABLED
 };

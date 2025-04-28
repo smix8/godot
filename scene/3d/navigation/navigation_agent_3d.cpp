@@ -31,6 +31,7 @@
 #include "navigation_agent_3d.h"
 
 #include "scene/3d/navigation/navigation_link_3d.h"
+#include "servers/navigation/navigation_debug_3d.h"
 #include "servers/navigation_server_3d.h"
 
 void NavigationAgent3D::_bind_methods() {
@@ -237,7 +238,7 @@ void NavigationAgent3D::_notification(int p_what) {
 			}
 
 #ifdef DEBUG_ENABLED
-			if (NavigationServer3D::get_singleton()->get_debug_enabled()) {
+			if (NavigationServer3D::get_singleton()->debug_global_is_enabled()) {
 				debug_path_dirty = true;
 			}
 #endif // DEBUG_ENABLED
@@ -291,6 +292,10 @@ void NavigationAgent3D::_notification(int p_what) {
 				NavigationServer3D::get_singleton()->agent_set_paused(get_rid(), !agent_parent->can_process());
 			}
 		} break;
+
+		//case NOTIFICATION_VISIBILITY_CHANGED: {
+		//	NavigationServer3D::get_singleton()->debug_agent_set_enabled(get_rid(), is_visible_in_tree());
+		//} break;
 
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 			if (agent_parent && avoidance_enabled) {
@@ -1086,7 +1091,7 @@ void NavigationAgent3D::_update_debug_path() {
 
 	debug_path_mesh->clear_surfaces();
 
-	if (!(debug_enabled && NavigationServer3D::get_singleton()->get_debug_navigation_enable_agent_paths())) {
+	if (!(debug_enabled && NavigationDebug3D::get_navagent_paths_enabled())) {
 		return;
 	}
 
@@ -1113,7 +1118,7 @@ void NavigationAgent3D::_update_debug_path() {
 
 	debug_path_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_LINES, debug_path_lines_mesh_array);
 
-	Ref<StandardMaterial3D> debug_agent_path_line_material = NavigationServer3D::get_singleton()->get_debug_navigation_agent_path_line_material();
+	Ref<StandardMaterial3D> debug_agent_path_line_material = NavigationDebug3D::get_navagent_path_line_material();
 	if (debug_use_custom) {
 		if (debug_agent_path_line_custom_material.is_null()) {
 			debug_agent_path_line_custom_material = debug_agent_path_line_material->duplicate();
@@ -1137,7 +1142,7 @@ void NavigationAgent3D::_update_debug_path() {
 
 		debug_path_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_POINTS, debug_path_points_mesh_array);
 
-		Ref<StandardMaterial3D> debug_agent_path_point_material = NavigationServer3D::get_singleton()->get_debug_navigation_agent_path_point_material();
+		Ref<StandardMaterial3D> debug_agent_path_point_material = NavigationDebug3D::get_navagent_path_point_material();
 		if (debug_use_custom) {
 			if (debug_agent_path_point_custom_material.is_null()) {
 				debug_agent_path_point_custom_material = debug_agent_path_point_material->duplicate();

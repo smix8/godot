@@ -32,13 +32,14 @@
 
 #include "core/math/random_pcg.h"
 #include "scene/3d/navigation/navigation_region_3d.h"
+#include "servers/navigation/navigation_debug_3d.h"
 #include "servers/navigation_server_3d.h"
 
 NavigationRegion3DGizmoPlugin::NavigationRegion3DGizmoPlugin() {
-	create_material("face_material", NavigationServer3D::get_singleton()->get_debug_navigation_geometry_face_color(), false, false, true);
-	create_material("face_material_disabled", NavigationServer3D::get_singleton()->get_debug_navigation_geometry_face_disabled_color(), false, false, true);
-	create_material("edge_material", NavigationServer3D::get_singleton()->get_debug_navigation_geometry_edge_color());
-	create_material("edge_material_disabled", NavigationServer3D::get_singleton()->get_debug_navigation_geometry_edge_disabled_color());
+	create_material("face_material", NavigationDebug3D::get_navmesh_geometry_face_color(), false, false, true);
+	create_material("face_material_disabled", NavigationDebug3D::get_navmesh_geometry_face_disabled_color(), false, false, true);
+	create_material("edge_material", NavigationDebug3D::get_navmesh_geometry_edge_color());
+	create_material("edge_material_disabled", NavigationDebug3D::get_navmesh_geometry_edge_disabled_color());
 
 	Color baking_aabb_material_color = Color(0.8, 0.5, 0.7);
 	baking_aabb_material_color.a = 0.1;
@@ -161,18 +162,18 @@ void NavigationRegion3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 
 	// if enabled add vertex colors to colorize each face individually
 	RandomPCG rand;
-	bool enabled_geometry_face_random_color = NavigationServer3D::get_singleton()->get_debug_navigation_enable_geometry_face_random_color();
+	bool enabled_geometry_face_random_color = NavigationDebug3D::get_navmesh_geometry_face_random_color_enabled();
 	if (enabled_geometry_face_random_color) {
-		Color debug_navigation_geometry_face_color = NavigationServer3D::get_singleton()->get_debug_navigation_geometry_face_color();
-		Color polygon_color = debug_navigation_geometry_face_color;
+		Color geometry_face_color = NavigationDebug3D::get_navmesh_geometry_face_color();
+		Color polygon_color = geometry_face_color;
 
 		Vector<Color> face_color_array;
 		face_color_array.resize(polygon_count * 3);
 
 		for (int i = 0; i < polygon_count; i++) {
 			// Generate the polygon color, slightly randomly modified from the settings one.
-			polygon_color.set_hsv(debug_navigation_geometry_face_color.get_h() + rand.random(-1.0, 1.0) * 0.1, debug_navigation_geometry_face_color.get_s(), debug_navigation_geometry_face_color.get_v() + rand.random(-1.0, 1.0) * 0.2);
-			polygon_color.a = debug_navigation_geometry_face_color.a;
+			polygon_color.set_hsv(geometry_face_color.get_h() + rand.random(-1.0, 1.0) * 0.1, geometry_face_color.get_s(), geometry_face_color.get_v() + rand.random(-1.0, 1.0) * 0.2);
+			polygon_color.a = geometry_face_color.a;
 
 			Vector<int> polygon = navigationmesh->get_polygon(i);
 
@@ -187,7 +188,7 @@ void NavigationRegion3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	p_gizmo->add_mesh(debug_mesh, navigationregion->is_enabled() ? get_material("face_material", p_gizmo) : get_material("face_material_disabled", p_gizmo));
 
 	// if enabled build geometry edge line surface
-	bool enabled_edge_lines = NavigationServer3D::get_singleton()->get_debug_navigation_enable_edge_lines();
+	bool enabled_edge_lines = NavigationDebug3D::get_navmesh_edge_lines_enabled();
 	if (enabled_edge_lines) {
 		Vector<Vector3> line_vertex_array;
 		line_vertex_array.resize(polygon_count * 6);

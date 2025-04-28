@@ -93,6 +93,10 @@ class GodotNavigationServer3D : public NavigationServer3D {
 	int pm_edge_free_count = 0;
 	int pm_obstacle_count = 0;
 
+	void project_settings_changed();
+	bool project_settings_dirty = false;
+	bool debug_settings_dirty = false;
+
 public:
 	GodotNavigationServer3D();
 	virtual ~GodotNavigationServer3D();
@@ -290,6 +294,86 @@ public:
 	virtual void query_path(const Ref<NavigationPathQueryParameters3D> &p_query_parameters, Ref<NavigationPathQueryResult3D> p_query_result, const Callable &p_callback = Callable()) override;
 
 	int get_process_info(ProcessInfo p_info) const override;
+
+#ifdef DEBUG_ENABLED
+	// Debug Globals.
+	virtual void debug_global_set_enabled(bool p_enabled) override;
+	virtual bool debug_global_is_enabled() const override;
+
+	virtual void debug_global_set_navigation_enabled(bool p_enabled) override;
+	virtual bool debug_global_is_navigation_enabled() const override;
+
+	virtual void debug_global_set_avoidance_enabled(bool p_enabled) override;
+	virtual bool debug_global_is_avoidance_enabled() const override;
+
+	virtual void debug_global_set_maps_enabled(bool p_enabled) override;
+	virtual void debug_global_set_regions_enabled(bool p_enabled) override;
+	virtual void debug_global_set_links_enabled(bool p_enabled) override;
+	virtual void debug_global_set_obstacles_enabled(bool p_enabled) override;
+	virtual void debug_global_set_agents_enabled(bool p_enabled) override;
+
+	virtual bool debug_global_are_maps_enabled() const override;
+	virtual bool debug_global_are_regions_enabled() const override;
+	virtual bool debug_global_are_links_enabled() const override;
+	virtual bool debug_global_are_obstacles_enabled() const override;
+	virtual bool debug_global_are_agents_enabled() const override;
+
+	// Debug Maps.
+	virtual void debug_map_set_enabled(RID p_map, bool p_enabled) override;
+	virtual void debug_map_set_canvas(RID p_map, RID p_canvas) override;
+	virtual void debug_map_set_scenario(RID p_map, RID p_scenario) override;
+
+	// Debug Regions.
+	virtual void debug_region_set_enabled(RID p_region, bool p_enabled) override;
+
+	// Debug Links.
+	virtual void debug_link_set_enabled(RID p_link, bool p_enabled) override;
+
+	// Debug Obstacles.
+	virtual void debug_obstacle_set_enabled(RID p_obstacle, bool p_enabled) override;
+
+	// Debug Agents.
+	virtual void debug_agent_set_enabled(RID p_agent, bool p_enabled) override;
+
+#else
+	virtual void debug_global_set_enabled(bool p_enabled) override {}
+	virtual bool debug_global_is_enabled() const override { return false; }
+
+	virtual void debug_global_set_navigation_enabled(bool p_enabled) override {}
+	virtual bool debug_global_is_navigation_enabled() const override { return false; }
+
+	virtual void debug_global_set_avoidance_enabled(bool p_enabled) override {}
+	virtual bool debug_global_is_avoidance_enabled() const override { return false; }
+
+	virtual void debug_global_set_maps_enabled(bool p_enabled) override {}
+	virtual void debug_global_set_regions_enabled(bool p_enabled) override {}
+	virtual void debug_global_set_links_enabled(bool p_enabled) override {}
+	virtual void debug_global_set_obstacles_enabled(bool p_enabled) override {}
+	virtual void debug_global_set_agents_enabled(bool p_enabled) override {}
+
+	virtual bool debug_global_are_maps_enabled() const override { return false; }
+	virtual bool debug_global_are_regions_enabled() const override { return false; }
+	virtual bool debug_global_are_links_enabled() const override { return false; }
+	virtual bool debug_global_are_obstacles_enabled() const override { return false; }
+	virtual bool debug_global_are_agents_enabled() const override { return false; }
+
+	// Debug Maps.
+	virtual void debug_map_set_enabled(RID p_map, bool p_enabled) override {}
+	virtual void debug_map_set_canvas(RID p_map, RID p_canvas) override {}
+	virtual void debug_map_set_scenario(RID p_map, RID p_scenario) override {}
+
+	// Debug Regions.
+	virtual void debug_region_set_enabled(RID p_region, bool p_enabled) override {}
+
+	// Debug Links.
+	virtual void debug_link_set_enabled(RID p_link, bool p_enabled) override {}
+
+	// Debug Obstacles.
+	virtual void debug_obstacle_set_enabled(RID p_obstacle, bool p_enabled) override {}
+
+	// Debug Agents.
+	virtual void debug_agent_set_enabled(RID p_agent, bool p_enabled) override {}
+#endif // DEBUG_ENABLED
 
 private:
 	void internal_free_agent(RID p_object);
