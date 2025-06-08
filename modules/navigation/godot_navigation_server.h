@@ -31,6 +31,13 @@
 #ifndef GODOT_NAVIGATION_SERVER_H
 #define GODOT_NAVIGATION_SERVER_H
 
+#include "core/templates/local_vector.h"
+#include "core/templates/rid.h"
+#include "core/templates/rid_owner.h"
+#include "servers/navigation_server_3d.h"
+#include "servers/navigation/navigation_path_query_parameters_3d.h"
+#include "servers/navigation/navigation_path_query_result_3d.h"
+
 #include "nav_agent.h"
 #include "nav_link.h"
 #include "nav_map.h"
@@ -58,6 +65,7 @@
 class GodotNavigationServer;
 #ifndef _3D_DISABLED
 class NavMeshGenerator3D;
+class NavPathfinder3D;
 #endif // _3D_DISABLED
 
 struct SetCommand {
@@ -66,6 +74,8 @@ struct SetCommand {
 };
 
 class GodotNavigationServer : public NavigationServer3D {
+	friend class NavPathfinder3D;
+
 	Mutex commands_mutex;
 	/// Mutex used to make any operation threadsafe.
 	Mutex operations_mutex;
@@ -84,6 +94,7 @@ class GodotNavigationServer : public NavigationServer3D {
 
 #ifndef _3D_DISABLED
 	NavMeshGenerator3D *navmesh_generator_3d = nullptr;
+	NavPathfinder3D *nav_pathfinder_3d = nullptr;
 #endif // _3D_DISABLED
 
 	// Performance Monitor

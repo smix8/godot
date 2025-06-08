@@ -82,6 +82,9 @@ public:
 
 	void set_metadata_flags(BitField<NavigationPathQueryParameters2D::PathMetadataFlags> p_flags);
 	BitField<NavigationPathQueryParameters2D::PathMetadataFlags> get_metadata_flags() const;
+
+	void set_use_thread(const bool p_enabled);
+	bool get_use_thread() const;
 };
 
 VARIANT_ENUM_CAST(NavigationPathQueryParameters2D::PathfindingAlgorithm);

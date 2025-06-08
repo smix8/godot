@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  navigation_path_query_result_3d.h                                     */
+/*  nav_pathfinder_3d.cpp                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,62 +28,83 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef NAVIGATION_PATH_QUERY_RESULT_3D_H
-#define NAVIGATION_PATH_QUERY_RESULT_3D_H
+#ifndef _3D_DISABLED
 
-#include "core/object/ref_counted.h"
-#include "core/os/rw_lock.h"
-#include "core/variant/typed_array.h"
+#include "nav_pathfinder_3d.h"
+
+#include "godot_navigation_server.h"
+
+#include "core/config/project_settings.h"
+#include "core/variant/callable.h"
+
 #include "servers/navigation/navigation_utilities.h"
+#include "servers/navigation_server_3d.h"
 
-class NavigationPathQueryResult3D : public RefCounted {
-	GDCLASS(NavigationPathQueryResult3D, RefCounted);
-	RWLock rwlock;
+using namespace NavigationUtilities;
 
-	Vector<Vector3> path;
-	Vector<int32_t> path_types;
-	TypedArray<RID> path_rids;
-	Vector<int64_t> path_owner_ids;
+NavPathfinder3D *NavPathfinder3D::singleton = nullptr;
+Mutex NavPathfinder3D::updating_query_results_mutex;
+Mutex NavPathfinder3D::pathfinder_task_mutex;
+bool NavPathfinder3D::use_threads = true;
+bool NavPathfinder3D::pathfinding_use_multiple_threads = true;
+HashMap<WorkerThreadPool::TaskID, NavPathfinder3D::NavMapPathfinderTask3D *> NavPathfinder3D::pathfinder_tasks;
 
-	Vector<Vector3> pending_path;
-	Vector<int32_t> pending_path_types;
-	TypedArray<RID> pending_path_rids;
-	Vector<int64_t> pending_path_owner_ids;
+NavPathfinder3D *NavPathfinder3D::get_singleton() {
+	return singleton;
+}
 
-	bool requires_sync = false;
+NavPathfinder3D::NavPathfinder3D() {
+	ERR_FAIL_COND(singleton != nullptr);
+	singleton = this;
 
-protected:
-	static void _bind_methods();
+	pathfinding_use_multiple_threads = GLOBAL_GET("navigation/pathfinding/thread_model/pathfinding_use_multiple_threads");
 
-public:
-	enum PathSegmentType {
-		PATH_SEGMENT_TYPE_REGION = 0,
-		PATH_SEGMENT_TYPE_LINK = 1,
-	};
+	use_threads = true;
+}
 
-	bool has_pending_update();
-	void sync();
+NavPathfinder3D::~NavPathfinder3D() {
+	finish();
+}
 
-	void set_path(const Vector<Vector3> &p_path);
-	const Vector<Vector3> &get_path() const;
+void NavPathfinder3D::sync() {
+}
 
-	void set_path_types(const Vector<int32_t> &p_path_types);
-	const Vector<int32_t> &get_path_types() const;
+void NavPathfinder3D::_pathfinder_thread_query_path(void *p_arg) {
+	NavMapPathfinderTask3D *pathfinder_task = static_cast<NavMapPathfinderTask3D *>(p_arg);
 
-	void set_path_rids(const TypedArray<RID> &p_path_rids);
-	TypedArray<RID> get_path_rids() const;
+	pathfindering_find_path_astar(pathfinder_task);
 
-	void set_path_owner_ids(const Vector<int64_t> &p_path_owner_ids);
-	const Vector<int64_t> &get_path_owner_ids() const;
+	pathfinder_task->status = NavMapPathfinderTask3D::TaskStatus::PATHFINDING_FINISHED;
+}
 
-	void reset();
+void NavPathfinder3D::init() {
+}
 
-	void set_pending_update(const NavigationUtilities::PathQueryResult &p_query_result);
+void NavPathfinder3D::finish() {
+	pathfinder_task_mutex.lock();
 
-	void emit_changed();
-	void emit_pending_update();
-};
+	for (KeyValue<WorkerThreadPool::TaskID, NavMapPathfinderTask3D *> &E : pathfinder_tasks) {
+		WorkerThreadPool::get_singleton()->wait_for_task_completion(E.key);
+		NavMapPathfinderTask3D *pathfinder_task = E.value;
+		memdelete(pathfinder_task);
+	}
+	pathfinder_tasks.clear();
 
-VARIANT_ENUM_CAST(NavigationPathQueryResult3D::PathSegmentType);
+	pathfinder_task_mutex.unlock();
+}
 
-#endif // NAVIGATION_PATH_QUERY_RESULT_3D_H
+bool NavPathfinder3D::pathfinder_emit_callback(const Callable &p_callback) {
+	ERR_FAIL_COND_V(!p_callback.is_valid(), false);
+
+	Callable::CallError ce;
+	Variant result;
+	p_callback.callp(nullptr, 0, result, ce);
+
+	return ce.error == Callable::CallError::CALL_OK;
+}
+
+void NavPathfinder3D::pathfindering_find_path_astar(NavMapPathfinderTask3D *pathfinder_task) {
+
+}
+
+#endif // _3D_DISABLED

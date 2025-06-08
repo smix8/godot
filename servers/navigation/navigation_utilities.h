@@ -66,6 +66,8 @@ struct PathQueryParameters {
 	Vector3 target_position;
 	uint32_t navigation_layers = 1;
 	BitField<PathMetadataFlags> metadata_flags = PATH_INCLUDE_ALL;
+	bool use_thread = true;
+	Callable callback = Callable();
 };
 
 struct PathQueryResult {

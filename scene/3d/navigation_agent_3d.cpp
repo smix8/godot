@@ -338,6 +338,7 @@ NavigationAgent3D::NavigationAgent3D() {
 	// Preallocate query and result objects to improve performance.
 	navigation_query = Ref<NavigationPathQueryParameters3D>();
 	navigation_query.instantiate();
+	navigation_query->set_use_thread(true);
 
 	navigation_result = Ref<NavigationPathQueryResult3D>();
 	navigation_result.instantiate();
@@ -624,6 +625,9 @@ Vector3 NavigationAgent3D::get_next_path_position() {
 	_update_navigation();
 
 	const Vector<Vector3> &navigation_path = navigation_result->get_path();
+	if (navigation_path_index >= navigation_path.size()) {
+		navigation_path_index = 0;
+	}
 	if (navigation_path.size() == 0) {
 		ERR_FAIL_NULL_V_MSG(agent_parent, Vector3(), "The agent has no parent.");
 		return agent_parent->get_global_position();
@@ -725,16 +729,17 @@ void NavigationAgent3D::_update_navigation() {
 		// Check if too far from the navigation path
 		if (navigation_path_index > 0) {
 			const Vector<Vector3> &navigation_path = navigation_result->get_path();
-
-			Vector3 segment[2];
-			segment[0] = navigation_path[navigation_path_index - 1];
-			segment[1] = navigation_path[navigation_path_index];
-			segment[0].y -= path_height_offset;
-			segment[1].y -= path_height_offset;
-			Vector3 p = Geometry3D::get_closest_point_to_segment(origin, segment);
-			if (origin.distance_to(p) >= path_max_distance) {
-				// To faraway, reload path
-				reload_path = true;
+			if (navigation_path.size() > 1) {
+				Vector3 segment[2];
+				segment[0] = navigation_path[navigation_path_index - 1];
+				segment[1] = navigation_path[navigation_path_index];
+				segment[0].y -= path_height_offset;
+				segment[1].y -= path_height_offset;
+				Vector3 p = Geometry3D::get_closest_point_to_segment(origin, segment);
+				if (origin.distance_to(p) >= path_max_distance) {
+					// To faraway, reload path
+					reload_path = true;
+				}
 			}
 		}
 	}
@@ -759,6 +764,11 @@ void NavigationAgent3D::_update_navigation() {
 		last_waypoint_reached = false;
 		navigation_path_index = 0;
 		emit_signal(SNAME("path_changed"));
+	}
+
+	if (navigation_result->has_pending_update()) {
+		navigation_result->sync();
+		navigation_path_index = 0;
 	}
 
 	if (navigation_result->get_path().size() == 0) {

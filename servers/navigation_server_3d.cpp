@@ -225,6 +225,8 @@ NavigationServer3D::NavigationServer3D() {
 	GLOBAL_DEF_BASIC("navigation/3d/default_edge_connection_margin", 0.25);
 	GLOBAL_DEF_BASIC("navigation/3d/default_link_connection_radius", 1.0);
 
+	GLOBAL_DEF("navigation/pathfinding/thread_model/pathfinding_use_multiple_threads", true);
+
 	GLOBAL_DEF("navigation/avoidance/thread_model/avoidance_use_multiple_threads", true);
 	GLOBAL_DEF("navigation/avoidance/thread_model/avoidance_use_high_priority_threads", true);
 

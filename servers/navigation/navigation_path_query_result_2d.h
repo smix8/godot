@@ -32,15 +32,26 @@
 #define NAVIGATION_PATH_QUERY_RESULT_2D_H
 
 #include "core/object/ref_counted.h"
+#include "core/os/rw_lock.h"
+#include "core/variant/typed_array.h"
 #include "servers/navigation/navigation_utilities.h"
 
 class NavigationPathQueryResult2D : public RefCounted {
 	GDCLASS(NavigationPathQueryResult2D, RefCounted);
 
+	RWLock rwlock;
+
 	Vector<Vector2> path;
 	Vector<int32_t> path_types;
 	TypedArray<RID> path_rids;
 	Vector<int64_t> path_owner_ids;
+
+	Vector<Vector2> pending_path;
+	Vector<int32_t> pending_path_types;
+	TypedArray<RID> pending_path_rids;
+	Vector<int64_t> pending_path_owner_ids;
+
+	bool requires_sync = false;
 
 protected:
 	static void _bind_methods();
@@ -50,6 +61,9 @@ public:
 		PATH_SEGMENT_TYPE_REGION = 0,
 		PATH_SEGMENT_TYPE_LINK = 1,
 	};
+
+	bool has_pending_update();
+	void sync();
 
 	void set_path(const Vector<Vector2> &p_path);
 	const Vector<Vector2> &get_path() const;
@@ -64,6 +78,11 @@ public:
 	const Vector<int64_t> &get_path_owner_ids() const;
 
 	void reset();
+
+	void set_pending_update(const NavigationUtilities::PathQueryResult &p_query_result);
+
+	void emit_changed();
+	void emit_pending_update();
 };
 
 VARIANT_ENUM_CAST(NavigationPathQueryResult2D::PathSegmentType);

@@ -119,6 +119,14 @@ BitField<NavigationPathQueryParameters2D::PathMetadataFlags> NavigationPathQuery
 	return (int64_t)parameters.metadata_flags;
 }
 
+void NavigationPathQueryParameters2D::set_use_thread(const bool p_enabled) {
+	//parameters_3d->set_use_thread(p_enabled);
+}
+
+bool NavigationPathQueryParameters2D::get_use_thread() const {
+	return false;//parameters_3d->get_use_thread();
+}
+
 void NavigationPathQueryParameters2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_pathfinding_algorithm", "pathfinding_algorithm"), &NavigationPathQueryParameters2D::set_pathfinding_algorithm);
 	ClassDB::bind_method(D_METHOD("get_pathfinding_algorithm"), &NavigationPathQueryParameters2D::get_pathfinding_algorithm);
@@ -141,6 +149,9 @@ void NavigationPathQueryParameters2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_metadata_flags", "flags"), &NavigationPathQueryParameters2D::set_metadata_flags);
 	ClassDB::bind_method(D_METHOD("get_metadata_flags"), &NavigationPathQueryParameters2D::get_metadata_flags);
 
+	ClassDB::bind_method(D_METHOD("set_use_thread", "enabled"), &NavigationPathQueryParameters2D::set_use_thread);
+	ClassDB::bind_method(D_METHOD("get_use_thread"), &NavigationPathQueryParameters2D::get_use_thread);
+
 	ADD_PROPERTY(PropertyInfo(Variant::RID, "map"), "set_map", "get_map");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "start_position"), "set_start_position", "get_start_position");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "target_position"), "set_target_position", "get_target_position");
@@ -148,6 +159,7 @@ void NavigationPathQueryParameters2D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "pathfinding_algorithm", PROPERTY_HINT_ENUM, "AStar"), "set_pathfinding_algorithm", "get_pathfinding_algorithm");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "path_postprocessing", PROPERTY_HINT_ENUM, "Corridorfunnel,Edgecentered"), "set_path_postprocessing", "get_path_postprocessing");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "metadata_flags", PROPERTY_HINT_FLAGS, "Include Types,Include RIDs,Include Owners"), "set_metadata_flags", "get_metadata_flags");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_thread"), "set_use_thread", "get_use_thread");
 
 	BIND_ENUM_CONSTANT(PATHFINDING_ALGORITHM_ASTAR);
 

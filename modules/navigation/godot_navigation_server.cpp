@@ -31,6 +31,7 @@
 #include "godot_navigation_server.h"
 
 #ifndef _3D_DISABLED
+#include "nav_pathfinder_3d.h"
 #include "nav_mesh_generator_3d.h"
 #endif // _3D_DISABLED
 
@@ -1245,6 +1246,9 @@ void GodotNavigationServer::sync() {
 	if (navmesh_generator_3d) {
 		navmesh_generator_3d->sync();
 	}
+	if (nav_pathfinder_3d) {
+		nav_pathfinder_3d->sync();
+	}
 #endif // _3D_DISABLED
 }
 
@@ -1302,6 +1306,7 @@ void GodotNavigationServer::process(real_t p_delta_time) {
 void GodotNavigationServer::init() {
 #ifndef _3D_DISABLED
 	navmesh_generator_3d = memnew(NavMeshGenerator3D);
+	nav_pathfinder_3d = memnew(NavPathfinder3D);
 #endif // _3D_DISABLED
 }
 
@@ -1312,6 +1317,11 @@ void GodotNavigationServer::finish() {
 		navmesh_generator_3d->finish();
 		memdelete(navmesh_generator_3d);
 		navmesh_generator_3d = nullptr;
+	}
+	if (nav_pathfinder_3d) {
+		nav_pathfinder_3d->finish();
+		memdelete(nav_pathfinder_3d);
+		nav_pathfinder_3d = nullptr;
 	}
 #endif // _3D_DISABLED
 }
@@ -1347,6 +1357,10 @@ PathQueryResult GodotNavigationServer::_query_path(const PathQueryParameters &p_
 		}
 	} else {
 		return r_query_result;
+	if (nav_pathfinder_3d) {
+		nav_pathfinder_3d->finish();
+		memdelete(nav_pathfinder_3d);
+		nav_pathfinder_3d = nullptr;
 	}
 
 	// add path postprocessing

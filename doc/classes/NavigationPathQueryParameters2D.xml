@@ -31,6 +31,9 @@
 		<member name="target_position" type="Vector2" setter="set_target_position" getter="get_target_position" default="Vector2(0, 0)">
 			The pathfinding target position in global coordinates.
 		</member>
+		<member name="use_thread" type="bool" setter="set_use_thread" getter="get_use_thread" default="true">
+			If [code]true[/code] the pathfinding uses a background thread. This can increase performance considerably at runtime but the query result will be updated with a small delay due to thread synchronization.
+		</member>
 	</members>
 	<constants>
 		<constant name="PATHFINDING_ALGORITHM_ASTAR" value="0" enum="PathfindingAlgorithm">

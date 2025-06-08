@@ -304,6 +304,7 @@ NavigationAgent2D::NavigationAgent2D() {
 	// Preallocate query and result objects to improve performance.
 	navigation_query = Ref<NavigationPathQueryParameters2D>();
 	navigation_query.instantiate();
+	navigation_query->set_use_thread(true);
 
 	navigation_result = Ref<NavigationPathQueryResult2D>();
 	navigation_result.instantiate();
@@ -691,6 +692,11 @@ void NavigationAgent2D::_update_navigation() {
 		last_waypoint_reached = false;
 		navigation_path_index = 0;
 		emit_signal(SNAME("path_changed"));
+	}
+
+	if (navigation_result->has_pending_update()) {
+		navigation_result->sync();
+		navigation_path_index = 0;
 	}
 
 	if (navigation_result->get_path().size() == 0) {

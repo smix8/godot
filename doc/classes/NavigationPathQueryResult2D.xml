@@ -4,7 +4,7 @@
 		Represents the result of a 2D pathfinding query.
 	</brief_description>
 	<description>
-		This class stores the result of a 2D navigation path query from the [NavigationServer2D].
+		This class contains the result of a navigation path query from [method NavigationServer2D.query_path]. Synchronization is required to apply any pending updates for the query result as updates from multithreaded operations can be received at any point. Call [method sync] to apply the pending update at the synchronization point of choice.
 	</description>
 	<tutorials>
 		<link title="Using NavigationPathQueryObjects">$DOCS_URL/tutorials/navigation/navigation_using_navigationpathqueryobjects.html</link>
@@ -14,6 +14,12 @@
 			<return type="void" />
 			<description>
 				Reset the result object to its initial state. This is useful to reuse the object across multiple queries.
+			</description>
+		</method>
+		<method name="sync">
+			<return type="void" />
+			<description>
+				Synchronizes the result with any pending update. Returns [code]true[/code] when the result had a pending update.
 			</description>
 		</method>
 	</methods>
@@ -31,6 +37,18 @@
 			The type of navigation primitive (region or link) that each point of the path goes through.
 		</member>
 	</members>
+	<signals>
+		<signal name="changed">
+			<description>
+				Emitted when the result was updated.
+			</description>
+		</signal>
+		<signal name="pending_update">
+			<description>
+				Emitted when the result has a pending update e.g. a multithreaded pathfinding calculation has just finished. Call [method sync] to apply the pending update at the synchronization point of choice.
+			</description>
+		</signal>
+	</signals>
 	<constants>
 		<constant name="PATH_SEGMENT_TYPE_REGION" value="0" enum="PathSegmentType">
 			This segment of the path goes through a region.
