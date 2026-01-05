@@ -81,6 +81,12 @@ class NavMeshGenerator2D : public Object {
 	static void generator_parse_geometry_node(Ref<NavigationPolygon> p_navigation_mesh, Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data, Node *p_node, bool p_recurse_children);
 	static void generator_parse_source_geometry_data(Ref<NavigationPolygon> p_navigation_mesh, Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data, Node *p_root_node);
 	static void generator_bake_from_source_geometry_data(Ref<NavigationPolygon> p_navigation_mesh, Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data);
+	static void generator_bake_from_source_geometry_data_polyclipping(Ref<NavigationPolygon> p_navigation_mesh, Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data);
+	static void generator_bake_from_source_geometry_data_rasterizer(Ref<NavigationPolygon> p_navigation_mesh, Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data);
+
+	static Vector<Vector3> outline_2d_to_outline_3d(const Vector<Vector2> &p_outline);
+	static Vector<Vector3> outline_2d_to_triangles_3d(const Vector<Vector2> &p_outline);
+
 
 	static bool generator_emit_callback(const Callable &p_callback);
 

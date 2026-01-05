@@ -10,6 +10,30 @@ env_navigation_2d = env_modules.Clone()
 
 thirdparty_obj = []
 
+# Recast Thirdparty source files
+if env["builtin_recastnavigation"]:
+    thirdparty_dir = "#thirdparty/recastnavigation/Recast/"
+    thirdparty_sources = [
+        "Source/Recast.cpp",
+        "Source/RecastAlloc.cpp",
+        "Source/RecastArea.cpp",
+        "Source/RecastAssert.cpp",
+        "Source/RecastContour.cpp",
+        "Source/RecastFilter.cpp",
+        "Source/RecastLayers.cpp",
+        "Source/RecastMesh.cpp",
+        "Source/RecastMeshDetail.cpp",
+        "Source/RecastRasterization.cpp",
+        "Source/RecastRegion.cpp",
+    ]
+    thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources]
+
+    env_navigation_2d.Prepend(CPPPATH=[thirdparty_dir + "Include"])
+
+    env_thirdparty = env_navigation_2d.Clone()
+    env_thirdparty.disable_warnings()
+    env_thirdparty.add_source_files(thirdparty_obj, thirdparty_sources)
+
 # RVO 2D Thirdparty source files
 if env["builtin_rvo2_2d"]:
     thirdparty_dir = "#thirdparty/rvo2/rvo2_2d/"

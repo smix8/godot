@@ -589,7 +589,7 @@ void NavigationPolygon::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "outlines", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_outlines", "_get_outlines");
 
 	ADD_GROUP("Sampling", "sample_");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "sample_partition_type", PROPERTY_HINT_ENUM, "Convex Partition,Triangulate"), "set_sample_partition_type", "get_sample_partition_type");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "sample_partition_type", PROPERTY_HINT_ENUM, "Convex Partition,Triangulate,Raster"), "set_sample_partition_type", "get_sample_partition_type");
 	ADD_GROUP("Geometry", "");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "parsed_geometry_type", PROPERTY_HINT_ENUM, "Mesh Instances,Static Colliders,Meshes and Static Colliders"), "set_parsed_geometry_type", "get_parsed_geometry_type");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "parsed_collision_mask", PROPERTY_HINT_LAYERS_2D_PHYSICS), "set_parsed_collision_mask", "get_parsed_collision_mask");
@@ -608,6 +608,7 @@ void NavigationPolygon::_bind_methods() {
 
 	BIND_ENUM_CONSTANT(SAMPLE_PARTITION_CONVEX_PARTITION);
 	BIND_ENUM_CONSTANT(SAMPLE_PARTITION_TRIANGULATE);
+	BIND_ENUM_CONSTANT(SAMPLE_PARTITION_RASTER);
 	BIND_ENUM_CONSTANT(SAMPLE_PARTITION_MAX);
 
 	BIND_ENUM_CONSTANT(PARSED_GEOMETRY_MESH_INSTANCES);

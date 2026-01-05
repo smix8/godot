@@ -212,7 +212,11 @@
 		<constant name="SAMPLE_PARTITION_TRIANGULATE" value="1" enum="SamplePartitionType">
 			Triangulation partitioning that results in a navigation mesh with triangle polygons.
 		</constant>
-		<constant name="SAMPLE_PARTITION_MAX" value="2" enum="SamplePartitionType">
+		<constant name="SAMPLE_PARTITION_RASTER" value="2" enum="SamplePartitionType">
+			Raster partitioning that uses a full cell grid to figure out input geometry. By far the most performance costly and least precise option of the partition types but also the most robust against overlap and other geometry input errors.
+			[b]Note:[/b] Only use for small to medium sized navigation mesh chunks that are size limited with a baking bound. Very large and unlimited geometry input can cause runtime crashes.
+		</constant>
+		<constant name="SAMPLE_PARTITION_MAX" value="3" enum="SamplePartitionType">
 			Represents the size of the [enum SamplePartitionType] enum.
 		</constant>
 		<constant name="PARSED_GEOMETRY_MESH_INSTANCES" value="0" enum="ParsedGeometryType">

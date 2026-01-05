@@ -33,11 +33,15 @@
 #include "nav_mesh_generator_2d.h"
 
 #include "core/config/project_settings.h"
+#include "core/math/geometry_2d.h"
 #include "scene/resources/2d/navigation_mesh_source_geometry_data_2d.h"
 #include "scene/resources/2d/navigation_polygon.h"
+#include "scene/resources/navigation_mesh.h"
 
 #include "thirdparty/clipper2/include/clipper2/clipper.h"
 #include "thirdparty/misc/polypartition.h"
+
+#include <Recast.h>
 
 NavMeshGenerator2D *NavMeshGenerator2D::singleton = nullptr;
 Mutex NavMeshGenerator2D::baking_navmesh_mutex;
@@ -310,6 +314,408 @@ void NavMeshGenerator2D::generator_bake_from_source_geometry_data(Ref<Navigation
 	if (p_navigation_mesh.is_null() || p_source_geometry_data.is_null()) {
 		return;
 	}
+
+	NavigationPolygon::SamplePartitionType sample_partition_type = p_navigation_mesh->get_sample_partition_type();
+
+	switch (sample_partition_type) {
+		case NavigationPolygon::SamplePartitionType::SAMPLE_PARTITION_CONVEX_PARTITION:
+			generator_bake_from_source_geometry_data_polyclipping(p_navigation_mesh, p_source_geometry_data);
+			break;
+		case NavigationPolygon::SamplePartitionType::SAMPLE_PARTITION_TRIANGULATE:
+			generator_bake_from_source_geometry_data_polyclipping(p_navigation_mesh, p_source_geometry_data);
+			break;
+		case NavigationPolygon::SamplePartitionType::SAMPLE_PARTITION_RASTER:
+			generator_bake_from_source_geometry_data_rasterizer(p_navigation_mesh, p_source_geometry_data);
+			break;
+		default: {
+			generator_bake_from_source_geometry_data_polyclipping(p_navigation_mesh, p_source_geometry_data);
+			return;
+		}
+	}
+}
+
+void NavMeshGenerator2D::generator_bake_from_source_geometry_data_rasterizer(Ref<NavigationPolygon> p_navigation_mesh, Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data) {
+	RWLockRead read_lock(p_source_geometry_data->geometry_rwlock);
+
+	const Vector<Vector<Vector2>> &traversable_outlines = p_source_geometry_data->traversable_outlines;
+	int outline_count = p_navigation_mesh->get_outline_count();
+
+	if (outline_count == 0 && (!p_source_geometry_data->has_data() || (traversable_outlines.is_empty()))) {
+		return;
+	}
+
+	Vector<float> source_geometry_vertices;
+	Vector<int> source_geometry_indices;
+
+	const Vector<Vector<Vector2>> &obstruction_outlines = p_source_geometry_data->obstruction_outlines;
+	const Vector<NavigationMeshSourceGeometryData2D::ProjectedObstruction> &projected_obstructions = p_source_geometry_data->_projected_obstructions;
+
+	{
+		for (int i = 0; i < outline_count; i++) {
+			const Vector<Vector2> &navigation_polygon_outline = p_navigation_mesh->get_outline(i);
+			Vector<Vector3> triangles_3d = outline_2d_to_triangles_3d(navigation_polygon_outline);
+			if (!triangles_3d.is_empty()) {
+				int face_count = triangles_3d.size() / 3;
+				int current_vertex_count = source_geometry_vertices.size() / 3;
+
+				for (int j = 0; j < face_count; j++) {
+					for (int k = 0;k < 3; k++) {
+						Vector3 vertex = triangles_3d[j * 3 + k];
+						source_geometry_vertices.push_back(vertex.x);
+						source_geometry_vertices.push_back(vertex.y);
+						source_geometry_vertices.push_back(vertex.z);
+					}
+					source_geometry_indices.push_back(current_vertex_count + (j * 3 + 0));
+					source_geometry_indices.push_back(current_vertex_count + (j * 3 + 2));
+					source_geometry_indices.push_back(current_vertex_count + (j * 3 + 1));
+				}
+			}
+		}
+
+		for (const Vector<Vector2> &traversable_outline : traversable_outlines) {
+			Vector<Vector3> triangles_3d = outline_2d_to_triangles_3d(traversable_outline);
+			if (!triangles_3d.is_empty()) {
+				int face_count = triangles_3d.size() / 3;
+				int current_vertex_count = source_geometry_vertices.size() / 3;
+
+				for (int j = 0; j < face_count; j++) {
+					for (int k = 0;k < 3; k++) {
+						Vector3 vertex = triangles_3d[j * 3 + k];
+						source_geometry_vertices.push_back(vertex.x);
+						source_geometry_vertices.push_back(vertex.y);
+						source_geometry_vertices.push_back(vertex.z);
+					}
+					source_geometry_indices.push_back(current_vertex_count + (j * 3 + 0));
+					source_geometry_indices.push_back(current_vertex_count + (j * 3 + 2));
+					source_geometry_indices.push_back(current_vertex_count + (j * 3 + 1));
+				}
+			}
+		}
+	}
+
+	if (source_geometry_vertices.size() < 3 || source_geometry_indices.size() < 3) {
+		return;
+	}
+
+	rcHeightfield *hf = nullptr;
+	rcCompactHeightfield *chf = nullptr;
+	rcContourSet *cset = nullptr;
+	rcPolyMesh *poly_mesh = nullptr;
+	rcPolyMeshDetail *detail_mesh = nullptr;
+	rcContext ctx;
+
+	const float *verts = source_geometry_vertices.ptr();
+	const int nverts = source_geometry_vertices.size() / 3;
+	const int *tris = source_geometry_indices.ptr();
+	const int ntris = source_geometry_indices.size() / 3;
+
+	float bmin[3], bmax[3];
+	rcCalcBounds(verts, nverts, bmin, bmax);
+
+	rcConfig cfg;
+	memset(&cfg, 0, sizeof(cfg));
+
+	float cell_size = MAX(4.0, p_navigation_mesh->get_cell_size());
+	float agent_height = 1.0;
+	float agent_max_climb = 0.0;
+	float agent_max_slope = 45.0;
+	float edge_max_length = 2.0;
+	float edge_max_error = 2.0f;
+	float region_min_size = 2.0f;
+	float region_merge_size = 20.0f;
+	float vertices_per_polygon = 6.0f;
+	float detail_sample_distance = 6.0f;
+	float detail_sample_max_error = 1.0f;
+
+	cfg.cs = cell_size;
+	cfg.ch = agent_height;
+	if (p_navigation_mesh->get_border_size() > 0.0) {
+		cfg.borderSize = (int)Math::ceil(p_navigation_mesh->get_border_size() / cfg.cs);
+	}
+	cfg.walkableSlopeAngle = agent_max_slope;
+	cfg.walkableHeight = (int)Math::ceil(agent_height / cfg.ch);
+	cfg.walkableClimb = (int)Math::floor(agent_max_climb / cfg.ch);
+	cfg.walkableRadius = (int)Math::ceil(p_navigation_mesh->get_agent_radius() / cfg.cs);
+	cfg.maxEdgeLen = (int)(edge_max_length / cell_size);
+	cfg.maxSimplificationError = edge_max_error;
+	cfg.minRegionArea = (int)(region_min_size * region_min_size);
+	cfg.mergeRegionArea = (int)(region_merge_size * region_merge_size);
+	cfg.maxVertsPerPoly = (int)vertices_per_polygon;
+	cfg.detailSampleDist = MAX(cell_size * detail_sample_distance, 0.1f);
+	cfg.detailSampleMaxError = agent_height * detail_sample_max_error;
+
+	cfg.bmin[0] = bmin[0];
+	cfg.bmin[1] = bmin[1];
+	cfg.bmin[2] = bmin[2];
+	cfg.bmax[0] = bmax[0];
+	cfg.bmax[1] = bmax[1];
+	cfg.bmax[2] = bmax[2];
+
+	Rect2 baking_rect = p_navigation_mesh->get_baking_rect();
+	if (baking_rect.has_area()) {
+		Vector2 baking_rect_offset = p_navigation_mesh->get_baking_rect_offset();
+
+		const int rect_begin_x = baking_rect.position[0] + baking_rect_offset.x;
+		const int rect_begin_y = baking_rect.position[1] + baking_rect_offset.y;
+		const int rect_end_x = baking_rect.position[0] + baking_rect.size[0] + baking_rect_offset.x;
+		const int rect_end_y = baking_rect.position[1] + baking_rect.size[1] + baking_rect_offset.y;
+
+		AABB baking_aabb;
+		baking_aabb.position = Vector3(rect_begin_x, 0.0, rect_begin_y);
+		baking_aabb.size = Vector3(rect_end_x - rect_begin_x, 1.0, rect_end_y - rect_begin_y);
+
+		cfg.bmin[0] = baking_aabb.position[0];
+		cfg.bmin[1] = baking_aabb.position[1];
+		cfg.bmin[2] = baking_aabb.position[2];
+		cfg.bmax[0] = cfg.bmin[0] + baking_aabb.size[0];
+		cfg.bmax[1] = cfg.bmin[1] + baking_aabb.size[1];
+		cfg.bmax[2] = cfg.bmin[2] + baking_aabb.size[2];
+	}
+
+	rcCalcGridSize(cfg.bmin, cfg.bmax, cfg.cs, &cfg.width, &cfg.height);
+
+	if ((cfg.width * cfg.height) > 30000000 && GLOBAL_GET("navigation/baking/use_crash_prevention_checks")) {
+		ERR_FAIL_MSG("Baking interrupted."
+					 "\nNavigationMesh baking process would likely crash the engine."
+					 "\nSource geometry is suspiciously big for the current Cell Size in the NavMesh Resource bake settings."
+					 "\nIf baking does not crash the engine or fail, the resulting NavigationMesh could create serious pathfinding performance issues."
+					 "\nIt is advised to increase Cell Size in the NavMesh Resource bake settings or reduce the size / scale of the source geometry."
+					 "\nIf you would like to try baking anyway, disable the 'navigation/baking/use_crash_prevention_checks' project setting.");
+		return;
+	}
+
+	hf = rcAllocHeightfield();
+
+	ERR_FAIL_NULL(hf);
+	ERR_FAIL_COND(!rcCreateHeightfield(&ctx, *hf, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch));
+
+	{
+		Vector<unsigned char> tri_areas;
+		tri_areas.resize(ntris);
+
+		ERR_FAIL_COND(tri_areas.is_empty());
+
+		memset(tri_areas.ptrw(), 0, ntris * sizeof(unsigned char));
+		rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, verts, nverts, tris, ntris, tri_areas.ptrw());
+
+		ERR_FAIL_COND(!rcRasterizeTriangles(&ctx, verts, nverts, tris, tri_areas.ptr(), ntris, *hf, cfg.walkableClimb));
+	}
+
+	chf = rcAllocCompactHeightfield();
+
+	ERR_FAIL_NULL(chf);
+	ERR_FAIL_COND(!rcBuildCompactHeightfield(&ctx, cfg.walkableHeight, cfg.walkableClimb, *hf, *chf));
+
+	rcFreeHeightField(hf);
+	hf = nullptr;
+
+	for (const Vector<Vector2> &obstruction_outline : obstruction_outlines) {
+		if (!obstruction_outline.is_empty()) {
+			Vector<Vector3> outline_3d = outline_2d_to_outline_3d(obstruction_outline);
+			if (!outline_3d.is_empty()) {
+				Vector<float> obstruction_vertices;
+
+				obstruction_vertices.resize(outline_3d.size() * 3);
+
+				float *obstruction_vertices_ptrw = obstruction_vertices.ptrw();
+
+				int vertex_index = 0;
+				for (const Vector3 &vertex : outline_3d) {
+					obstruction_vertices_ptrw[vertex_index++] = vertex.x;
+					obstruction_vertices_ptrw[vertex_index++] = vertex.y;
+					obstruction_vertices_ptrw[vertex_index++] = vertex.z;
+				}
+
+				const float *projected_obstruction_verts = obstruction_vertices.ptr();
+				const int projected_obstruction_nverts = obstruction_vertices.size() / 3;
+
+				rcMarkConvexPolyArea(&ctx, projected_obstruction_verts, projected_obstruction_nverts, 0.0, 1.0, RC_NULL_AREA, *chf);
+			}
+		}
+	}
+
+	if (!projected_obstructions.is_empty()) {
+		for (const NavigationMeshSourceGeometryData2D::ProjectedObstruction &projected_obstruction : projected_obstructions) {
+			if (projected_obstruction.carve) {
+				continue;
+			}
+			if (projected_obstruction.vertices.is_empty() || projected_obstruction.vertices.size() % 2 != 0) {
+				continue;
+			}
+
+			Vector<float> obstruction_vertices;
+			obstruction_vertices.resize(projected_obstruction.vertices.size() / 2 * 3);
+
+			float *obstruction_vertices_ptrw = obstruction_vertices.ptrw();
+
+			int vertex_index = 0;
+			for (int j = 0; j < projected_obstruction.vertices.size() / 2; j++) {
+				obstruction_vertices_ptrw[vertex_index++] = projected_obstruction.vertices[j * 2 + 0];
+				obstruction_vertices_ptrw[vertex_index++] = 0.0;
+				obstruction_vertices_ptrw[vertex_index++] =  projected_obstruction.vertices[j * 2 + 1];
+			}
+
+			const float *projected_obstruction_verts = obstruction_vertices.ptr();
+			const int projected_obstruction_nverts = obstruction_vertices.size() / 3;
+
+			rcMarkConvexPolyArea(&ctx, projected_obstruction_verts, projected_obstruction_nverts, 0.0, 1.0, RC_NULL_AREA, *chf);
+		}
+	}
+
+	ERR_FAIL_COND(!rcErodeWalkableArea(&ctx, cfg.walkableRadius, *chf));
+
+	// Carve obstacles to the eroded geometry. Those will NOT be affected by e.g. agent_radius because that step is already done.
+	if (!projected_obstructions.is_empty()) {
+		for (const NavigationMeshSourceGeometryData2D::ProjectedObstruction &projected_obstruction : projected_obstructions) {
+			if (!projected_obstruction.carve) {
+				continue;
+			}
+			if (projected_obstruction.vertices.is_empty() || projected_obstruction.vertices.size() % 2 != 0) {
+				continue;
+			}
+
+			Vector<float> obstruction_vertices;
+			obstruction_vertices.resize(projected_obstruction.vertices.size() / 2 * 3);
+
+			float *obstruction_vertices_ptrw = obstruction_vertices.ptrw();
+
+			int vertex_index = 0;
+			for (int j = 0; j < projected_obstruction.vertices.size() / 2; j++) {
+				obstruction_vertices_ptrw[vertex_index++] = projected_obstruction.vertices[j * 2 + 0];
+				obstruction_vertices_ptrw[vertex_index++] = 0.0;
+				obstruction_vertices_ptrw[vertex_index++] =  projected_obstruction.vertices[j * 2 + 1];
+			}
+
+			const float *projected_obstruction_verts = obstruction_vertices.ptr();
+			const int projected_obstruction_nverts = obstruction_vertices.size() / 3;
+
+			rcMarkConvexPolyArea(&ctx, projected_obstruction_verts, projected_obstruction_nverts, 0.0, 1.0, RC_NULL_AREA, *chf);
+		}
+	}
+
+	ERR_FAIL_COND(!rcBuildLayerRegions(&ctx, *chf, cfg.borderSize, cfg.minRegionArea));
+
+	cset = rcAllocContourSet();
+
+	ERR_FAIL_NULL(cset);
+	ERR_FAIL_COND(!rcBuildContours(&ctx, *chf, cfg.maxSimplificationError, cfg.maxEdgeLen, *cset));
+
+	poly_mesh = rcAllocPolyMesh();
+	ERR_FAIL_NULL(poly_mesh);
+	ERR_FAIL_COND(!rcBuildPolyMesh(&ctx, *cset, cfg.maxVertsPerPoly, *poly_mesh));
+
+	detail_mesh = rcAllocPolyMeshDetail();
+	ERR_FAIL_NULL(detail_mesh);
+	ERR_FAIL_COND(!rcBuildPolyMeshDetail(&ctx, *poly_mesh, *chf, cfg.detailSampleDist, cfg.detailSampleMaxError, *detail_mesh));
+
+	rcFreeCompactHeightfield(chf);
+	chf = nullptr;
+	rcFreeContourSet(cset);
+	cset = nullptr;
+
+	Vector<Vector3> nav_vertices;
+	Vector<Vector<int>> nav_polygons;
+
+	HashMap<Vector3, int> recast_vertex_to_native_index;
+	LocalVector<int> recast_index_to_native_index;
+	recast_index_to_native_index.resize(detail_mesh->nverts);
+
+	for (int i = 0; i < detail_mesh->nverts; i++) {
+		const float *v = &detail_mesh->verts[i * 3];
+		const Vector3 vertex = Vector3(v[0], v[1], v[2]);
+		int *existing_index_ptr = recast_vertex_to_native_index.getptr(vertex);
+		if (!existing_index_ptr) {
+			int new_index = recast_vertex_to_native_index.size();
+			recast_index_to_native_index[i] = new_index;
+			recast_vertex_to_native_index[vertex] = new_index;
+			nav_vertices.push_back(vertex);
+		} else {
+			recast_index_to_native_index[i] = *existing_index_ptr;
+		}
+	}
+
+	for (int i = 0; i < detail_mesh->nmeshes; i++) {
+		const unsigned int *detail_mesh_m = &detail_mesh->meshes[i * 4];
+		const unsigned int detail_mesh_bverts = detail_mesh_m[0];
+		const unsigned int detail_mesh_m_btris = detail_mesh_m[2];
+		const unsigned int detail_mesh_ntris = detail_mesh_m[3];
+		const unsigned char *detail_mesh_tris = &detail_mesh->tris[detail_mesh_m_btris * 4];
+		for (unsigned int j = 0; j < detail_mesh_ntris; j++) {
+			Vector<int> nav_indices;
+			nav_indices.resize(3);
+			// Polygon order in recast is opposite than godot's
+			int index1 = ((int)(detail_mesh_bverts + detail_mesh_tris[j * 4 + 0]));
+			int index2 = ((int)(detail_mesh_bverts + detail_mesh_tris[j * 4 + 2]));
+			int index3 = ((int)(detail_mesh_bverts + detail_mesh_tris[j * 4 + 1]));
+
+			nav_indices.write[0] = recast_index_to_native_index[index1];
+			nav_indices.write[1] = recast_index_to_native_index[index2];
+			nav_indices.write[2] = recast_index_to_native_index[index3];
+
+			nav_polygons.push_back(nav_indices);
+		}
+	}
+
+	Vector<Vector2> nav_vertices_2d;
+	nav_vertices_2d.resize(nav_vertices.size());
+	Vector2 *nav_vertices_2d_ptrw = nav_vertices_2d.ptrw();
+
+	for (int i = 0; i < nav_vertices.size(); i++) {
+		const Vector3 vertex = nav_vertices[i];
+		nav_vertices_2d_ptrw[i] = Vector2(vertex.x, vertex.z);
+	}
+
+	p_navigation_mesh->set_data(nav_vertices_2d, nav_polygons);
+
+	rcFreePolyMesh(poly_mesh);
+	poly_mesh = nullptr;
+	rcFreePolyMeshDetail(detail_mesh);
+	detail_mesh = nullptr;
+}
+
+Vector<Vector3> NavMeshGenerator2D::outline_2d_to_outline_3d(const Vector<Vector2> &p_outline) {
+	Vector<Vector3> outline_3d;
+
+	if (p_outline.is_empty()) {
+		return outline_3d;
+	}
+
+	outline_3d.resize(p_outline.size());
+	Vector3 *outline_3d_ptrw = outline_3d.ptrw();
+
+	for (int i = 0; i < p_outline.size(); i++) {
+		const Vector2 vertex = p_outline[i];
+		outline_3d_ptrw[i] = Vector3(vertex.x, 0.0, vertex.y);
+	}
+
+	return outline_3d;
+}
+
+Vector<Vector3> NavMeshGenerator2D::outline_2d_to_triangles_3d(const Vector<Vector2> &p_outline) {
+	Vector<Vector3> triangles;
+
+	if (p_outline.is_empty()) {
+		return triangles;
+	}
+
+	Vector<int> triangles_2d_indices = Geometry2D::triangulate_polygon(p_outline);
+	if (triangles_2d_indices.is_empty()) {
+		return triangles;
+	}
+
+	triangles.resize(triangles_2d_indices.size());
+	Vector3 *triangles_ptrw = triangles.ptrw();
+
+	for (int i = 0; i < triangles_2d_indices.size(); i++) {
+		int vertex_idx = triangles_2d_indices[i];
+		const Vector2 vertex = p_outline[vertex_idx];
+		triangles_ptrw[i] = Vector3(vertex.x, 0.0, vertex.y);
+	}
+
+	return triangles;
+}
+
+void NavMeshGenerator2D::generator_bake_from_source_geometry_data_polyclipping(Ref<NavigationPolygon> p_navigation_mesh, Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data) {
 
 	using namespace Clipper2Lib;
 	PathsD traversable_polygon_paths;

@@ -31,9 +31,11 @@ if env["builtin_recastnavigation"]:
 
     env_navigation_3d.Prepend(CPPPATH=[thirdparty_dir + "Include"])
 
-    env_thirdparty = env_navigation_3d.Clone()
-    env_thirdparty.disable_warnings()
-    env_thirdparty.add_source_files(thirdparty_obj, thirdparty_sources)
+    # Don't build recastnavigation if 2D navigation is enabled.
+    if not navigation_2d_enabled:
+        env_thirdparty = env_navigation_3d.Clone()
+        env_thirdparty.disable_warnings()
+        env_thirdparty.add_source_files(thirdparty_obj, thirdparty_sources)
 
 # RVO 2D Thirdparty source files
 if env["builtin_rvo2_2d"]:
