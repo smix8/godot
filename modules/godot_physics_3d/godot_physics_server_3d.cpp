@@ -32,6 +32,7 @@
 
 #include "godot_body_direct_state_3d.h"
 #include "godot_broad_phase_3d_bvh.h"
+#include "godot_space_queries_3d.h"
 #include "joints/godot_cone_twist_joint_3d.h"
 #include "joints/godot_generic_6dof_joint_3d.h"
 #include "joints/godot_hinge_joint_3d.h"
@@ -40,6 +41,9 @@
 
 #include "core/debugger/engine_debugger.h"
 #include "core/os/os.h"
+#include "servers/physics_3d/queries/physics_point_query_result_3d.h"
+#include "servers/physics_3d/queries/physics_ray_query_result_3d.h"
+#include "servers/physics_3d/queries/physics_shape_query_result_3d.h"
 
 #define FLUSH_QUERY_CHECK(m_object) \
 	ERR_FAIL_COND_MSG(m_object->get_space() && flushing_queries, "Can't change this state while flushing queries. Use call_deferred() or set_deferred() to change monitoring state instead.");
@@ -1613,6 +1617,51 @@ Quaternion GodotPhysicsServer3D::generic_6dof_joint_get_angular_target_rotation(
 	// GodotPhysics3D does not apply angular spring equilibrium points, so there is no body-space target to return.
 	WARN_PRINT_ONCE("Quaternion angular target rotations for Generic6DOFJoint3D are only supported by Jolt Physics. GodotPhysics3D returns the identity quaternion.");
 	return Quaternion();
+}
+
+void GodotPhysicsServer3D::query_intersect_point(const Ref<PhysicsPointQueryParameters3D> &p_query_parameters, Ref<PhysicsPointQueryResult3D> p_query_result) {
+	ERR_FAIL_COND(p_query_parameters.is_null());
+	ERR_FAIL_COND(p_query_result.is_null());
+
+	const RID space_rid = p_query_parameters->get_space();
+	ERR_FAIL_COND(space_rid.is_null());
+
+	GodotSpace3D *space = space_owner.get_or_null(space_rid);
+	ERR_FAIL_NULL(space);
+
+	ERR_FAIL_COND_MSG((using_threads && !doing_sync) || space->is_locked(), "The queried physics space state is inaccessible right now, wait for iteration or physics process notification.");
+
+	GodotSpaceQueries3D::space_intersect_point(space, p_query_parameters, p_query_result);
+}
+
+void GodotPhysicsServer3D::query_intersect_ray(const Ref<PhysicsRayQueryParameters3D> &p_query_parameters, Ref<PhysicsRayQueryResult3D> p_query_result) {
+	ERR_FAIL_COND(p_query_parameters.is_null());
+	ERR_FAIL_COND(p_query_result.is_null());
+
+	const RID space_rid = p_query_parameters->get_space();
+	ERR_FAIL_COND(space_rid.is_null());
+
+	GodotSpace3D *space = space_owner.get_or_null(space_rid);
+	ERR_FAIL_NULL(space);
+
+	ERR_FAIL_COND_MSG((using_threads && !doing_sync) || space->is_locked(), "The queried physics space state is inaccessible right now, wait for iteration or physics process notification.");
+
+	GodotSpaceQueries3D::space_intersect_ray(space, p_query_parameters, p_query_result);
+}
+
+void GodotPhysicsServer3D::query_intersect_shape(const Ref<PhysicsShapeQueryParameters3D> &p_query_parameters, Ref<PhysicsShapeQueryResult3D> p_query_result) {
+	ERR_FAIL_COND(p_query_parameters.is_null());
+	ERR_FAIL_COND(p_query_result.is_null());
+
+	const RID space_rid = p_query_parameters->get_space();
+	ERR_FAIL_COND(space_rid.is_null());
+
+	GodotSpace3D *space = space_owner.get_or_null(space_rid);
+	ERR_FAIL_NULL(space);
+
+	ERR_FAIL_COND_MSG((using_threads && !doing_sync) || space->is_locked(), "The queried physics space state is inaccessible right now, wait for iteration or physics process notification.");
+
+	GodotSpaceQueries3D::space_intersect_shape(space, p_query_parameters, p_query_result);
 }
 
 void GodotPhysicsServer3D::free_rid(RID p_rid) {

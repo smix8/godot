@@ -33,6 +33,9 @@
 
 #include "core/config/project_settings.h"
 #include "core/object/class_db.h"
+#include "servers/physics_2d/queries/physics_point_query_result_2d.h"
+#include "servers/physics_2d/queries/physics_ray_query_result_2d.h"
+#include "servers/physics_2d/queries/physics_shape_query_result_2d.h"
 
 PhysicsServer2D *PhysicsServer2D::singleton = nullptr;
 
@@ -49,6 +52,18 @@ bool PhysicsServer2D::_body_test_motion(RID p_body, RequiredParam<PhysicsTestMot
 	}
 
 	return body_test_motion(p_body, p_parameters->get_parameters(), result_ptr);
+}
+
+void PhysicsServer2D::query_intersect_point(const Ref<PhysicsPointQueryParameters2D> &p_query_parameters, Ref<PhysicsPointQueryResult2D> p_query_result) {
+	WARN_PRINT("PhysicsServer2D::query_intersect_point() has not been implemented by the currently used physics engine.");
+}
+
+void PhysicsServer2D::query_intersect_ray(const Ref<PhysicsRayQueryParameters2D> &p_query_parameters, Ref<PhysicsRayQueryResult2D> p_query_result) {
+	WARN_PRINT("PhysicsServer2D::query_intersect_ray() has not been implemented by the currently used physics engine.");
+}
+
+void PhysicsServer2D::query_intersect_shape(const Ref<PhysicsShapeQueryParameters2D> &p_query_parameters, Ref<PhysicsShapeQueryResult2D> p_query_result) {
+	WARN_PRINT("PhysicsServer2D::query_intersect_shape() has not been implemented by the currently used physics engine.");
 }
 
 void PhysicsServer2D::_bind_methods() {
@@ -222,6 +237,10 @@ void PhysicsServer2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("damped_spring_joint_get_param", "joint", "param"), &PhysicsServer2D::damped_spring_joint_get_param);
 
 	ClassDB::bind_method(D_METHOD("joint_get_type", "joint"), &PhysicsServer2D::joint_get_type);
+
+	ClassDB::bind_method(D_METHOD("query_intersect_point", "query_parameters", "query_result"), &PhysicsServer2D::query_intersect_point);
+	ClassDB::bind_method(D_METHOD("query_intersect_ray", "query_parameters", "query_result"), &PhysicsServer2D::query_intersect_ray);
+	ClassDB::bind_method(D_METHOD("query_intersect_shape", "query_parameters", "query_result"), &PhysicsServer2D::query_intersect_shape);
 
 	ClassDB::bind_method(D_METHOD("free_rid", "rid"), &PhysicsServer2D::free_rid);
 

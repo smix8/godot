@@ -68,4 +68,10 @@ public:
 
 	void set_exclude(const TypedArray<RID> &p_exclude);
 	TypedArray<RID> get_exclude() const;
+
+	void set_space(RID p_space) { parameters.space = p_space; }
+	RID get_space() const { return parameters.space; }
+
+	void set_results_max(uint32_t p_count) { parameters.results_max = MAX(p_count, uint32_t(1)); }
+	uint32_t get_results_max() const { return parameters.results_max; }
 };

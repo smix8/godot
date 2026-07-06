@@ -25,5 +25,11 @@
 		<member name="position" type="Vector3" setter="set_position" getter="get_position" default="Vector3(0, 0, 0)">
 			The position being queried for, in global coordinates.
 		</member>
+		<member name="results_max" type="int" setter="set_results_max" getter="get_results_max" default="32" experimental="This property is experimental and still subject to changes. While experimental no compatibility will be provided.">
+			The maximum amount of possible returned results.
+		</member>
+		<member name="space" type="RID" setter="set_space" getter="get_space" default="RID()" experimental="This property is experimental and still subject to changes. While experimental no compatibility will be provided.">
+			The physics space [RID] used in a direct [PhysicsServer3D] query, e.g. using [method PhysicsServer3D.query_intersect_point].
+		</member>
 	</members>
 </class>

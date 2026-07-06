@@ -506,6 +506,7 @@ bool JoltPhysicsDirectSpaceState3D::intersect_ray(const PS3DT::RayParameters &p_
 		ERR_FAIL_COND_V(shape_index == -1, false);
 		r_result.shape = shape_index;
 		r_result.face_index = _try_get_face_index(*object->get_jolt_body(), sub_shape_id);
+		r_result.shape_rid = shaped_object->get_shape(shape_index)->get_rid();
 	}
 
 	return true;
@@ -539,6 +540,7 @@ int JoltPhysicsDirectSpaceState3D::intersect_point(const PS3DT::PointParameters 
 			const int shape_index = shaped_object->find_shape_index(hit.mSubShapeID2);
 			ERR_FAIL_COND_V(shape_index == -1, 0);
 			result.shape = shape_index;
+			result.shape_rid = shaped_object->get_shape(shape_index)->get_rid();
 		}
 
 		result.rid = object->get_rid();
@@ -611,6 +613,7 @@ int JoltPhysicsDirectSpaceState3D::intersect_shape(const PS3DT::ShapeParameters 
 				const int shape_index = shaped_object->find_shape_index(hit.mSubShapeID2);
 				ERR_FAIL_COND_V(shape_index == -1, 0);
 				result.shape = shape_index;
+				result.shape_rid = shaped_object->get_shape(shape_index)->get_rid();
 			}
 
 			result.rid = object->get_rid();

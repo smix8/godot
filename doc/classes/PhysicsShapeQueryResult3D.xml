@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysicsShapeQueryResult3D" inherits="RefCounted" api_type="core" experimental="This class is experimental and still subject to changes. While experimental no compatibility will be provided." xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		Represents the result of a 3D physics shape query.
+	</brief_description>
+	<description>
+		This class stores the result of a direct [PhysicsServer3D] query, e.g. using [method PhysicsServer3D.query_intersect_shape].
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_collider_id" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns the [code]ObjectID[/code] of the object which manages the collider (e.g. a [Node]).
+				Use [method @GlobalScope.instance_from_id] to retrieve an [Object] from a nonzero [code]ObjectID[/code].
+				Returns [code]0[/code] when there is no object or when [param index] is out of range.
+				[b]Warning:[/b] While the results are thread-safe receiving unsafe objects like Nodes is not.
+				To avoid unexpected issues receive thread-unsafe objects on the main thread.
+			</description>
+		</method>
+		<method name="get_collider_rid" qualifiers="const">
+			<return type="RID" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns the server [RID] handle of the collider.
+				Returns [code]0[/code] when the handle is invalid or when [param index] is out of range.
+			</description>
+		</method>
+		<method name="get_collider_shape_index" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns the shape index of the collider shape.
+				Returns [code]-1[/code] when invalid or when [param index] is out of range.
+				[b]Warning:[/b] Changing collider shapes may invalidate this index.
+			</description>
+		</method>
+		<method name="get_collider_shape_rid" qualifiers="const">
+			<return type="RID" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns the server [RID] handle of the collider shape.
+				[b]Warning:[/b] A shape may be shared and used by many colliders.
+			</description>
+		</method>
+		<method name="is_empty" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if the results are empty. See also [method size].
+			</description>
+		</method>
+		<method name="size" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the number of collisions in the results. Empty results always return [code]0[/code]. See also [method is_empty].
+			</description>
+		</method>
+	</methods>
+</class>

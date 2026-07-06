@@ -38,6 +38,10 @@
 #include "servers/physics_3d/queries/physics_testmotion_query_parameters_3d.h"
 #include "servers/physics_3d/queries/physics_testmotion_query_result_3d.h"
 
+class PhysicsPointQueryResult3D;
+class PhysicsRayQueryResult3D;
+class PhysicsShapeQueryResult3D;
+
 class PhysicsDirectSpaceState3D;
 template <typename T>
 class TypedArray;
@@ -369,6 +373,10 @@ public:
 	virtual Quaternion generic_6dof_joint_get_angular_target_rotation(RID p_joint) const = 0;
 
 	/* QUERY API */
+
+	virtual void query_intersect_point(const Ref<PhysicsPointQueryParameters3D> &p_query_parameters, Ref<PhysicsPointQueryResult3D> p_query_result);
+	virtual void query_intersect_ray(const Ref<PhysicsRayQueryParameters3D> &p_query_parameters, Ref<PhysicsRayQueryResult3D> p_query_result);
+	virtual void query_intersect_shape(const Ref<PhysicsShapeQueryParameters3D> &p_query_parameters, Ref<PhysicsShapeQueryResult3D> p_query_result);
 
 	/* MISC */
 

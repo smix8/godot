@@ -38,6 +38,7 @@
 namespace PhysicsServer2DTypes {
 
 struct RayParameters {
+	RID space;
 	Vector2 from;
 	Vector2 to;
 	HashSet<RID> exclude;
@@ -47,6 +48,8 @@ struct RayParameters {
 	bool collide_with_areas = false;
 
 	bool hit_from_inside = false;
+
+	uint32_t results_max = 1; // Compatibility default with legacy DirectSpace.intersect_ray().
 };
 
 struct RayResult {
@@ -56,6 +59,7 @@ struct RayResult {
 	ObjectID collider_id;
 	Object *collider = nullptr;
 	int shape = 0;
+	RID shape_rid;
 };
 
 struct ShapeResult {
@@ -63,9 +67,11 @@ struct ShapeResult {
 	ObjectID collider_id;
 	Object *collider = nullptr;
 	int shape = 0;
+	RID shape_rid;
 };
 
 struct PointParameters {
+	RID space;
 	Vector2 position;
 	ObjectID canvas_instance_id;
 	HashSet<RID> exclude;
@@ -75,9 +81,12 @@ struct PointParameters {
 	bool collide_with_areas = false;
 
 	bool pick_point = false;
+
+	uint32_t results_max = 32; // Compatibility default with legacy DirectSpace.intersect_point().
 };
 
 struct ShapeParameters {
+	RID space;
 	RID shape_rid;
 	Transform2D transform;
 	Vector2 motion;
@@ -87,6 +96,8 @@ struct ShapeParameters {
 
 	bool collide_with_bodies = true;
 	bool collide_with_areas = false;
+
+	uint32_t results_max = 32; // Compatibility default with legacy DirectSpace.intersect_shape().
 };
 
 struct ShapeRestInfo {

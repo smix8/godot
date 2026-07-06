@@ -63,6 +63,9 @@ Ref<PhysicsRayQueryParameters3D> PhysicsRayQueryParameters3D::create(Vector3 p_f
 void PhysicsRayQueryParameters3D::_bind_methods() {
 	ClassDB::bind_static_method("PhysicsRayQueryParameters3D", D_METHOD("create", "from", "to", "collision_mask", "exclude"), &PhysicsRayQueryParameters3D::create, DEFVAL(UINT32_MAX), DEFVAL(TypedArray<RID>()));
 
+	ClassDB::bind_method(D_METHOD("set_space", "space"), &PhysicsRayQueryParameters3D::set_space);
+	ClassDB::bind_method(D_METHOD("get_space"), &PhysicsRayQueryParameters3D::get_space);
+
 	ClassDB::bind_method(D_METHOD("set_from", "from"), &PhysicsRayQueryParameters3D::set_from);
 	ClassDB::bind_method(D_METHOD("get_from"), &PhysicsRayQueryParameters3D::get_from);
 
@@ -87,6 +90,10 @@ void PhysicsRayQueryParameters3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_hit_back_faces", "enable"), &PhysicsRayQueryParameters3D::set_hit_back_faces);
 	ClassDB::bind_method(D_METHOD("is_hit_back_faces_enabled"), &PhysicsRayQueryParameters3D::is_hit_back_faces_enabled);
 
+	ClassDB::bind_method(D_METHOD("set_results_max", "count"), &PhysicsRayQueryParameters3D::set_results_max);
+	ClassDB::bind_method(D_METHOD("get_results_max"), &PhysicsRayQueryParameters3D::get_results_max);
+
+	ADD_PROPERTY(PropertyInfo(Variant::RID, "space"), "set_space", "get_space");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "from"), "set_from", "get_from");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "to"), "set_to", "get_to");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_mask", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_mask", "get_collision_mask");
@@ -95,4 +102,5 @@ void PhysicsRayQueryParameters3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "collide_with_areas"), "set_collide_with_areas", "is_collide_with_areas_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "hit_from_inside"), "set_hit_from_inside", "is_hit_from_inside_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "hit_back_faces"), "set_hit_back_faces", "is_hit_back_faces_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "results_max", PROPERTY_HINT_RANGE, "1,32,1,or_greater"), "set_results_max", "get_results_max");
 }

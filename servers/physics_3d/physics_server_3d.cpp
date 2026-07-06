@@ -33,6 +33,9 @@
 #include "core/config/project_settings.h"
 #include "core/object/class_db.h"
 #include "core/object/ref_counted.h"
+#include "servers/physics_3d/queries/physics_point_query_result_3d.h"
+#include "servers/physics_3d/queries/physics_ray_query_result_3d.h"
+#include "servers/physics_3d/queries/physics_shape_query_result_3d.h"
 
 PhysicsServer3D *PhysicsServer3D::singleton = nullptr;
 
@@ -76,6 +79,18 @@ RID PhysicsServer3D::shape_create(PS3DE::ShapeType p_shape) {
 		default:
 			return RID();
 	}
+}
+
+void PhysicsServer3D::query_intersect_point(const Ref<PhysicsPointQueryParameters3D> &p_query_parameters, Ref<PhysicsPointQueryResult3D> p_query_result) {
+	WARN_PRINT("PhysicsServer3D::query_intersect_point() has not been implemented by the currently used physics engine.");
+}
+
+void PhysicsServer3D::query_intersect_ray(const Ref<PhysicsRayQueryParameters3D> &p_query_parameters, Ref<PhysicsRayQueryResult3D> p_query_result) {
+	WARN_PRINT("PhysicsServer3D::query_intersect_ray() has not been implemented by the currently used physics engine.");
+}
+
+void PhysicsServer3D::query_intersect_shape(const Ref<PhysicsShapeQueryParameters3D> &p_query_parameters, Ref<PhysicsShapeQueryResult3D> p_query_result) {
+	WARN_PRINT("PhysicsServer3D::query_intersect_shape() has not been implemented by the currently used physics engine.");
 }
 
 void PhysicsServer3D::_bind_methods() {
@@ -434,6 +449,10 @@ void PhysicsServer3D::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("generic_6dof_joint_set_angular_target_rotation", "joint", "target_rotation"), &PhysicsServer3D::generic_6dof_joint_set_angular_target_rotation);
 	ClassDB::bind_method(D_METHOD("generic_6dof_joint_get_angular_target_rotation", "joint"), &PhysicsServer3D::generic_6dof_joint_get_angular_target_rotation);
+
+	ClassDB::bind_method(D_METHOD("query_intersect_point", "query_parameters", "query_result"), &PhysicsServer3D::query_intersect_point);
+	ClassDB::bind_method(D_METHOD("query_intersect_ray", "query_parameters", "query_result"), &PhysicsServer3D::query_intersect_ray);
+	ClassDB::bind_method(D_METHOD("query_intersect_shape", "query_parameters", "query_result"), &PhysicsServer3D::query_intersect_shape);
 
 	ClassDB::bind_method(D_METHOD("free_rid", "rid"), &PhysicsServer3D::free_rid);
 

@@ -31,6 +31,9 @@
 #include "physics_server_3d_wrap_mt.h"
 
 #include "core/object/callable_mp.h"
+#include "servers/physics_3d/queries/physics_point_query_result_3d.h"
+#include "servers/physics_3d/queries/physics_ray_query_result_3d.h"
+#include "servers/physics_3d/queries/physics_shape_query_result_3d.h"
 
 void PhysicsServer3DWrapMT::_assign_mt_ids(WorkerThreadPool::TaskID p_pump_task_id) {
 	server_thread = Thread::get_caller_id();
@@ -84,6 +87,18 @@ void PhysicsServer3DWrapMT::end_sync() {
 	if (create_thread) {
 		doing_sync.clear();
 	}
+}
+
+void PhysicsServer3DWrapMT::query_intersect_point(const Ref<PhysicsPointQueryParameters3D> &p_query_parameters, Ref<PhysicsPointQueryResult3D> p_query_result) {
+	physics_server_3d->query_intersect_point(p_query_parameters, p_query_result);
+}
+
+void PhysicsServer3DWrapMT::query_intersect_ray(const Ref<PhysicsRayQueryParameters3D> &p_query_parameters, Ref<PhysicsRayQueryResult3D> p_query_result) {
+	physics_server_3d->query_intersect_ray(p_query_parameters, p_query_result);
+}
+
+void PhysicsServer3DWrapMT::query_intersect_shape(const Ref<PhysicsShapeQueryParameters3D> &p_query_parameters, Ref<PhysicsShapeQueryResult3D> p_query_result) {
+	physics_server_3d->query_intersect_shape(p_query_parameters, p_query_result);
 }
 
 void PhysicsServer3DWrapMT::init() {

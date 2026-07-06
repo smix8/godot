@@ -889,6 +889,110 @@
 				Sets a pin joint parameter.
 			</description>
 		</method>
+		<method name="query_intersect_point" experimental="This function is experimental and still subject to changes. While experimental no compatibility will be provided.">
+			<return type="void" />
+			<param index="0" name="query_parameters" type="PhysicsPointQueryParameters2D" />
+			<param index="1" name="query_result" type="PhysicsPointQueryResult2D" />
+			<description>
+				Queries point intersection(s) in a physics space. Clears and updates the provided [param query_result].
+				[codeblocks]
+				[gdscript]
+				extends Node2D
+
+				var parameter: PhysicsPointQueryParameters2D = PhysicsPointQueryParameters2D.new()
+				var result: PhysicsPointQueryResult2D = PhysicsPointQueryResult2D.new()
+
+				func _enter_tree():
+					parameter.space = get_world_2d().get_space()
+
+				func _physics_process():
+					# ... update parameter as needed.
+
+					PhysicsServer2D.query_intersect_point(parameter, result)
+
+					if not result.is_empty():
+						for i: int in result.size():
+							var collider_rid: RID = result.get_collider_rid(i)
+							var collider_id: int = result.get_collider_id(i)
+							var collider: Object = instance_from_id(collider_id)
+							var collider_shape_index: int = result.get_collider_shape_index(i)
+							var collider_shape_rid: RID = result.get_collider_shape_rid(i)
+							var collider_shape_index: int = result.get_collider_shape_index(i)
+							var collider_shape_rid: RID = result.get_collider_shape_rid(i)
+				[/gdscript]
+				[/codeblocks]
+			</description>
+		</method>
+		<method name="query_intersect_ray" experimental="This function is experimental and still subject to changes. While experimental no compatibility will be provided.">
+			<return type="void" />
+			<param index="0" name="query_parameters" type="PhysicsRayQueryParameters2D" />
+			<param index="1" name="query_result" type="PhysicsRayQueryResult2D" />
+			<description>
+				Queries ray intersection(s) in a physics space. Clears and updates the provided [param query_result].
+				[codeblocks]
+				[gdscript]
+				extends Node2D
+
+				var parameter: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.new()
+				var result: PhysicsRayQueryResult2D = PhysicsRayQueryResult2D.new()
+
+				func _enter_tree():
+					parameter.space = get_world_2d().get_space()
+
+				func _physics_process():
+					# ... update parameter as needed.
+
+					PhysicsServer2D.query_intersect_ray(parameter, result)
+
+					if not result.is_empty():
+						for i: int in result.size():
+							var collider_rid: RID = result.get_collider_rid(i)
+							var collider_id: int = result.get_collider_id(i)
+							var collider: Object = instance_from_id(collider_id)
+							var collision_normal: Vector2 = result.get_collision_normal(i)
+							var collision_point: Vector2 = result.get_collision_point(i)
+							var collider_shape_index: int = result.get_collider_shape_index(i)
+							var collider_shape_rid: RID = result.get_collider_shape_rid(i)
+				[/gdscript]
+				[/codeblocks]
+			</description>
+		</method>
+		<method name="query_intersect_shape" experimental="This function is experimental and still subject to changes. While experimental no compatibility will be provided.">
+			<return type="void" />
+			<param index="0" name="query_parameters" type="PhysicsShapeQueryParameters2D" />
+			<param index="1" name="query_result" type="PhysicsShapeQueryResult2D" />
+			<description>
+				Queries shape intersection(s) in a physics space. Clears and updates the provided [param query_result].
+				[codeblocks]
+				[gdscript]
+				extends Node2D
+
+				var parameter: PhysicsShapeQueryParameters2D = PhysicsShapeQueryParameters2D.new()
+				var result: PhysicsShapeQueryResult2D = PhysicsShapeQueryResult2D.new()
+				var shape: Shape2D
+
+				func _enter_tree():
+					parameter.space = get_world_2d().get_space()
+					parameter.shape = CircleShape2D.new()
+
+				func _physics_process():
+					# ... update parameter as needed.
+
+					PhysicsServer2D.query_intersect_shape(parameter, result)
+
+					if not result.is_empty():
+						for i: int in result.size():
+							var collider_rid: RID = result.get_collider_rid(i)
+							var collider_id: int = result.get_collider_id(i)
+							var collider: Object = instance_from_id(collider_id)
+							var collider_shape_index: int = result.get_collider_shape_index(i)
+							var collider_shape_rid: RID = result.get_collider_shape_rid(i)
+							var collider_shape_index: int = result.get_collider_shape_index(i)
+							var collider_shape_rid: RID = result.get_collider_shape_rid(i)
+				[/gdscript]
+				[/codeblocks]
+			</description>
+		</method>
 		<method name="rectangle_shape_create">
 			<return type="RID" />
 			<description>

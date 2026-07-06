@@ -33,9 +33,13 @@
 #include "godot_body_direct_state_2d.h"
 #include "godot_broad_phase_2d_bvh.h"
 #include "godot_collision_solver_2d.h"
+#include "godot_space_queries_2d.h"
 
 #include "core/debugger/engine_debugger.h"
 #include "core/os/os.h"
+#include "servers/physics_2d/queries/physics_point_query_result_2d.h"
+#include "servers/physics_2d/queries/physics_ray_query_result_2d.h"
+#include "servers/physics_2d/queries/physics_shape_query_result_2d.h"
 
 #define FLUSH_QUERY_CHECK(m_object) \
 	ERR_FAIL_COND_MSG(m_object->get_space() && flushing_queries, "Can't change this state while flushing queries. Use call_deferred() or set_deferred() to change monitoring state instead.");
@@ -1216,6 +1220,51 @@ PS2DE::JointType GodotPhysicsServer2D::joint_get_type(RID p_joint) const {
 	ERR_FAIL_NULL_V(joint, PS2DE::JOINT_TYPE_PIN);
 
 	return joint->get_type();
+}
+
+void GodotPhysicsServer2D::query_intersect_point(const Ref<PhysicsPointQueryParameters2D> &p_query_parameters, Ref<PhysicsPointQueryResult2D> p_query_result) {
+	ERR_FAIL_COND(p_query_parameters.is_null());
+	ERR_FAIL_COND(p_query_result.is_null());
+
+	const RID space_rid = p_query_parameters->get_space();
+	ERR_FAIL_COND(space_rid.is_null());
+
+	GodotSpace2D *space = space_owner.get_or_null(space_rid);
+	ERR_FAIL_NULL(space);
+
+	ERR_FAIL_COND_MSG((using_threads && !doing_sync) || space->is_locked(), "The queried physics space state is inaccessible right now, wait for iteration or physics process notification.");
+
+	GodotSpaceQueries2D::space_intersect_point(space, p_query_parameters, p_query_result);
+}
+
+void GodotPhysicsServer2D::query_intersect_ray(const Ref<PhysicsRayQueryParameters2D> &p_query_parameters, Ref<PhysicsRayQueryResult2D> p_query_result) {
+	ERR_FAIL_COND(p_query_parameters.is_null());
+	ERR_FAIL_COND(p_query_result.is_null());
+
+	const RID space_rid = p_query_parameters->get_space();
+	ERR_FAIL_COND(space_rid.is_null());
+
+	GodotSpace2D *space = space_owner.get_or_null(space_rid);
+	ERR_FAIL_NULL(space);
+
+	ERR_FAIL_COND_MSG((using_threads && !doing_sync) || space->is_locked(), "The queried physics space state is inaccessible right now, wait for iteration or physics process notification.");
+
+	GodotSpaceQueries2D::space_intersect_ray(space, p_query_parameters, p_query_result);
+}
+
+void GodotPhysicsServer2D::query_intersect_shape(const Ref<PhysicsShapeQueryParameters2D> &p_query_parameters, Ref<PhysicsShapeQueryResult2D> p_query_result) {
+	ERR_FAIL_COND(p_query_parameters.is_null());
+	ERR_FAIL_COND(p_query_result.is_null());
+
+	const RID space_rid = p_query_parameters->get_space();
+	ERR_FAIL_COND(space_rid.is_null());
+
+	GodotSpace2D *space = space_owner.get_or_null(space_rid);
+	ERR_FAIL_NULL(space);
+
+	ERR_FAIL_COND_MSG((using_threads && !doing_sync) || space->is_locked(), "The queried physics space state is inaccessible right now, wait for iteration or physics process notification.");
+
+	GodotSpaceQueries2D::space_intersect_shape(space, p_query_parameters, p_query_result);
 }
 
 void GodotPhysicsServer2D::free_rid(RID p_rid) {

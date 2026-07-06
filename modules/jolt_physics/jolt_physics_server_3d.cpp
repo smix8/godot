@@ -51,7 +51,12 @@
 #include "spaces/jolt_job_system.h"
 #include "spaces/jolt_physics_direct_space_state_3d.h"
 #include "spaces/jolt_space_3d.h"
+#include "spaces/jolt_space_queries_3d.h"
 #include "spaces/jolt_temp_allocator.h"
+
+#include "servers/physics_3d/queries/physics_point_query_result_3d.h"
+#include "servers/physics_3d/queries/physics_ray_query_result_3d.h"
+#include "servers/physics_3d/queries/physics_shape_query_result_3d.h"
 
 JoltPhysicsServer3D::JoltPhysicsServer3D(bool p_on_separate_thread) :
 		on_separate_thread(p_on_separate_thread) {
@@ -1599,6 +1604,45 @@ bool JoltPhysicsServer3D::joint_is_disabled_collisions_between_bodies(RID p_join
 	ERR_FAIL_NULL_V(joint, false);
 
 	return joint->is_collision_disabled();
+}
+
+void JoltPhysicsServer3D::query_intersect_point(const Ref<PhysicsPointQueryParameters3D> &p_query_parameters, Ref<PhysicsPointQueryResult3D> p_query_result) {
+	ERR_FAIL_COND(p_query_parameters.is_null());
+	ERR_FAIL_COND(p_query_result.is_null());
+
+	const RID space_rid = p_query_parameters->get_space();
+	ERR_FAIL_COND(space_rid.is_null());
+
+	JoltSpace3D *space = space_owner.get_or_null(space_rid);
+	ERR_FAIL_NULL(space);
+
+	JoltSpaceQueries3D::space_intersect_point(space, p_query_parameters, p_query_result);
+}
+
+void JoltPhysicsServer3D::query_intersect_ray(const Ref<PhysicsRayQueryParameters3D> &p_query_parameters, Ref<PhysicsRayQueryResult3D> p_query_result) {
+	ERR_FAIL_COND(p_query_parameters.is_null());
+	ERR_FAIL_COND(p_query_result.is_null());
+
+	const RID space_rid = p_query_parameters->get_space();
+	ERR_FAIL_COND(space_rid.is_null());
+
+	JoltSpace3D *space = space_owner.get_or_null(space_rid);
+	ERR_FAIL_NULL(space);
+
+	JoltSpaceQueries3D::space_intersect_ray(space, p_query_parameters, p_query_result);
+}
+
+void JoltPhysicsServer3D::query_intersect_shape(const Ref<PhysicsShapeQueryParameters3D> &p_query_parameters, Ref<PhysicsShapeQueryResult3D> p_query_result) {
+	ERR_FAIL_COND(p_query_parameters.is_null());
+	ERR_FAIL_COND(p_query_result.is_null());
+
+	const RID space_rid = p_query_parameters->get_space();
+	ERR_FAIL_COND(space_rid.is_null());
+
+	JoltSpace3D *space = space_owner.get_or_null(space_rid);
+	ERR_FAIL_NULL(space);
+
+	JoltSpaceQueries3D::space_intersect_shape(space, p_query_parameters, p_query_result);
 }
 
 void JoltPhysicsServer3D::free_rid(RID p_rid) {

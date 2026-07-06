@@ -38,6 +38,7 @@
 namespace PhysicsServer3DTypes {
 
 struct RayParameters {
+	RID space;
 	Vector3 from;
 	Vector3 to;
 	HashSet<RID> exclude;
@@ -50,6 +51,8 @@ struct RayParameters {
 	bool hit_back_faces = true;
 
 	bool pick_ray = false;
+
+	uint32_t results_max = 1; // Compatibility default with legacy DirectSpace.intersect_ray().
 };
 
 struct RayResult {
@@ -60,6 +63,7 @@ struct RayResult {
 	Object *collider = nullptr;
 	int shape = 0;
 	int face_index = -1;
+	RID shape_rid;
 };
 
 struct ShapeResult {
@@ -67,18 +71,23 @@ struct ShapeResult {
 	ObjectID collider_id;
 	Object *collider = nullptr;
 	int shape = 0;
+	RID shape_rid;
 };
 
 struct PointParameters {
+	RID space;
 	Vector3 position;
 	HashSet<RID> exclude;
 	uint32_t collision_mask = UINT32_MAX;
 
 	bool collide_with_bodies = true;
 	bool collide_with_areas = false;
+
+	uint32_t results_max = 32; // Compatibility default with legacy DirectSpace.intersect_point().
 };
 
 struct ShapeParameters {
+	RID space;
 	RID shape_rid;
 	Transform3D transform;
 	Vector3 motion;
@@ -88,6 +97,8 @@ struct ShapeParameters {
 
 	bool collide_with_bodies = true;
 	bool collide_with_areas = false;
+
+	uint32_t results_max = 32; // Compatibility default with legacy DirectSpace.intersect_shape().
 };
 
 struct ShapeRestInfo {

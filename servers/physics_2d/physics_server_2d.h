@@ -39,6 +39,10 @@
 #include "servers/physics_2d/queries/physics_testmotion_query_parameters_2d.h"
 #include "servers/physics_2d/queries/physics_testmotion_query_result_2d.h"
 
+class PhysicsPointQueryResult2D;
+class PhysicsRayQueryResult2D;
+class PhysicsShapeQueryResult2D;
+
 class PhysicsServer2D : public Object {
 	GDCLASS(PhysicsServer2D, Object);
 
@@ -267,6 +271,12 @@ public:
 	virtual real_t damped_spring_joint_get_param(RID p_joint, PS2DE::DampedSpringParam p_param) const = 0;
 
 	virtual PS2DE::JointType joint_get_type(RID p_joint) const = 0;
+
+	/* QUERIES */
+
+	virtual void query_intersect_point(const Ref<PhysicsPointQueryParameters2D> &p_query_parameters, Ref<PhysicsPointQueryResult2D> p_query_result);
+	virtual void query_intersect_ray(const Ref<PhysicsRayQueryParameters2D> &p_query_parameters, Ref<PhysicsRayQueryResult2D> p_query_result);
+	virtual void query_intersect_shape(const Ref<PhysicsShapeQueryParameters2D> &p_query_parameters, Ref<PhysicsShapeQueryResult2D> p_query_result);
 
 	/* MISC */
 

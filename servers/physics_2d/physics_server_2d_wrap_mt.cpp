@@ -31,6 +31,9 @@
 #include "physics_server_2d_wrap_mt.h"
 
 #include "core/object/callable_mp.h"
+#include "servers/physics_2d/queries/physics_point_query_result_2d.h"
+#include "servers/physics_2d/queries/physics_ray_query_result_2d.h"
+#include "servers/physics_2d/queries/physics_shape_query_result_2d.h"
 
 void PhysicsServer2DWrapMT::_assign_mt_ids(WorkerThreadPool::TaskID p_pump_task_id) {
 	server_thread = Thread::get_caller_id();
@@ -84,6 +87,18 @@ void PhysicsServer2DWrapMT::end_sync() {
 	if (create_thread) {
 		doing_sync.clear();
 	}
+}
+
+void PhysicsServer2DWrapMT::query_intersect_point(const Ref<PhysicsPointQueryParameters2D> &p_query_parameters, Ref<PhysicsPointQueryResult2D> p_query_result) {
+	physics_server_2d->query_intersect_point(p_query_parameters, p_query_result);
+}
+
+void PhysicsServer2DWrapMT::query_intersect_ray(const Ref<PhysicsRayQueryParameters2D> &p_query_parameters, Ref<PhysicsRayQueryResult2D> p_query_result) {
+	physics_server_2d->query_intersect_ray(p_query_parameters, p_query_result);
+}
+
+void PhysicsServer2DWrapMT::query_intersect_shape(const Ref<PhysicsShapeQueryParameters2D> &p_query_parameters, Ref<PhysicsShapeQueryResult2D> p_query_result) {
+	physics_server_2d->query_intersect_shape(p_query_parameters, p_query_result);
 }
 
 void PhysicsServer2DWrapMT::init() {

@@ -414,6 +414,12 @@ public:
 	virtual void joint_disable_collisions_between_bodies(RID p_joint, bool p_disable) override;
 	virtual bool joint_is_disabled_collisions_between_bodies(RID p_joint) const override;
 
+	/* QUERY API */
+
+	virtual void query_intersect_point(const Ref<PhysicsPointQueryParameters3D> &p_query_parameters, Ref<PhysicsPointQueryResult3D> p_query_result) override;
+	virtual void query_intersect_ray(const Ref<PhysicsRayQueryParameters3D> &p_query_parameters, Ref<PhysicsRayQueryResult3D> p_query_result) override;
+	virtual void query_intersect_shape(const Ref<PhysicsShapeQueryParameters3D> &p_query_parameters, Ref<PhysicsShapeQueryResult3D> p_query_result) override;
+
 	virtual void free_rid(RID p_rid) override;
 
 	virtual void set_active(bool p_active) override;

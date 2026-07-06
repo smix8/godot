@@ -283,6 +283,12 @@ public:
 
 	virtual PS2DE::JointType joint_get_type(RID p_joint) const override;
 
+	/* QUERIES */
+
+	virtual void query_intersect_point(const Ref<PhysicsPointQueryParameters2D> &p_query_parameters, Ref<PhysicsPointQueryResult2D> p_query_result) override;
+	virtual void query_intersect_ray(const Ref<PhysicsRayQueryParameters2D> &p_query_parameters, Ref<PhysicsRayQueryResult2D> p_query_result) override;
+	virtual void query_intersect_shape(const Ref<PhysicsShapeQueryParameters2D> &p_query_parameters, Ref<PhysicsShapeQueryResult2D> p_query_result) override;
+
 	/* MISC */
 
 	virtual void free_rid(RID p_rid) override;

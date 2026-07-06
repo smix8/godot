@@ -51,6 +51,9 @@ TypedArray<RID> PhysicsPointQueryParameters2D::get_exclude() const {
 }
 
 void PhysicsPointQueryParameters2D::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_space", "space"), &PhysicsPointQueryParameters2D::set_space);
+	ClassDB::bind_method(D_METHOD("get_space"), &PhysicsPointQueryParameters2D::get_space);
+
 	ClassDB::bind_method(D_METHOD("set_position", "position"), &PhysicsPointQueryParameters2D::set_position);
 	ClassDB::bind_method(D_METHOD("get_position"), &PhysicsPointQueryParameters2D::get_position);
 
@@ -69,10 +72,15 @@ void PhysicsPointQueryParameters2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_collide_with_areas", "enable"), &PhysicsPointQueryParameters2D::set_collide_with_areas);
 	ClassDB::bind_method(D_METHOD("is_collide_with_areas_enabled"), &PhysicsPointQueryParameters2D::is_collide_with_areas_enabled);
 
+	ClassDB::bind_method(D_METHOD("set_results_max", "count"), &PhysicsPointQueryParameters2D::set_results_max);
+	ClassDB::bind_method(D_METHOD("get_results_max"), &PhysicsPointQueryParameters2D::get_results_max);
+
+	ADD_PROPERTY(PropertyInfo(Variant::RID, "space"), "set_space", "get_space");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "position"), "set_position", "get_position");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "canvas_instance_id", PROPERTY_HINT_OBJECT_ID), "set_canvas_instance_id", "get_canvas_instance_id");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_mask", PROPERTY_HINT_LAYERS_2D_PHYSICS), "set_collision_mask", "get_collision_mask");
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "exclude", PROPERTY_HINT_ARRAY_TYPE, "RID"), "set_exclude", "get_exclude");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "collide_with_bodies"), "set_collide_with_bodies", "is_collide_with_bodies_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "collide_with_areas"), "set_collide_with_areas", "is_collide_with_areas_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "results_max", PROPERTY_HINT_RANGE, "1,32,1,or_greater"), "set_results_max", "get_results_max");
 }

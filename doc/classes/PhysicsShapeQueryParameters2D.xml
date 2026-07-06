@@ -28,6 +28,9 @@
 		<member name="motion" type="Vector2" setter="set_motion" getter="get_motion" default="Vector2(0, 0)">
 			The motion of the shape being queried for.
 		</member>
+		<member name="results_max" type="int" setter="set_results_max" getter="get_results_max" default="32" experimental="This property is experimental and still subject to changes. While experimental no compatibility will be provided.">
+			The maximum amount of possible returned results.
+		</member>
 		<member name="shape" type="Resource" setter="set_shape" getter="get_shape">
 			The [Shape2D] that will be used for collision/intersection queries. This stores the actual reference which avoids the shape to be released while being used for queries, so always prefer using this over [member shape_rid].
 		</member>
@@ -61,6 +64,9 @@
 			PhysicsServer2D.FreeRid(shapeRid);
 			[/csharp]
 			[/codeblocks]
+		</member>
+		<member name="space" type="RID" setter="set_space" getter="get_space" default="RID()" experimental="This property is experimental and still subject to changes. While experimental no compatibility will be provided.">
+			The physics space [RID] used in a direct [PhysicsServer2D] query, e.g. using [method PhysicsServer2D.query_intersect_shape].
 		</member>
 		<member name="transform" type="Transform2D" setter="set_transform" getter="get_transform" default="Transform2D(1, 0, 0, 1, 0, 0)">
 			The queried shape's transform matrix.

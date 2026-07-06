@@ -394,6 +394,12 @@ public:
 	FUNC2(joint_disable_collisions_between_bodies, RID, bool);
 	FUNC1RC(bool, joint_is_disabled_collisions_between_bodies, RID);
 
+	/* QUERY API */
+
+	virtual void query_intersect_point(const Ref<PhysicsPointQueryParameters3D> &p_query_parameters, Ref<PhysicsPointQueryResult3D> p_query_result) override;
+	virtual void query_intersect_ray(const Ref<PhysicsRayQueryParameters3D> &p_query_parameters, Ref<PhysicsRayQueryResult3D> p_query_result) override;
+	virtual void query_intersect_shape(const Ref<PhysicsShapeQueryParameters3D> &p_query_parameters, Ref<PhysicsShapeQueryResult3D> p_query_result) override;
+
 	/* MISC */
 
 	FUNC1(free_rid, RID);
